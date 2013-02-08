@@ -17,8 +17,9 @@ Will produce the following Python dict :
  'description':'Just a test.' }
 '''
 import base64
+import importExceptions
 
-def extractLDIFFragment(input):
+def extractLDIFFragment(inputStream, lineNumber=0):
     '''Reads a LDIF file, stopping at the first blank line.
        This function :
          - ignores comments.
@@ -27,18 +28,32 @@ def extractLDIFFragment(input):
        '''
     lines = []
 
-    for line in input:
+    z = importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
+
+    for line in inputStream:
+        #Simple line counter
+        lineNumber += 1
+
         #Did we just hit a blank line ?
         if line.isspace():
-            #Found the end of the fragment
-            break
+            if len(lines) == 0:
+                #Leading blank lines are ignored
+                continue
+            else:
+                #Found the end of the fragment
+                break
         #If this is a comment
         elif line[0] == '#':
-            #Leave it alone
+            #Leave it alone (ignore it)
             continue
 
         #Is this line the continuation of the previous line ?
         elif not line.find(' ') == 0:
+            #Ignore leading version, but only if it is
+            #the first item in the fragment
+            if line.find('version: ') == 0 and len(lines) == 0:
+                continue
+                
             #It is a new attribute:value pair, save it
             lines.append( line.strip() )
             continue
@@ -48,10 +63,36 @@ def extractLDIFFragment(input):
             lines[len(lines)-1] += line.strip()
 
         else:
-            #raise 'LDIF fragment starts with continuation line'
-            print 'LDIF fragment starts with continuation line'
-            break
+            raise importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
     
-    return lines
+    return (lineNumber, lines)
 
 
+def convertLDIFFragment(fragment, nosort = ['dn','objectclass']):
+    '''Converts a fragment to a dictionary. It will :
+          - convert attribute names to lowercase
+          - create a list of values if an attribute has multiple values '''
+    ldapObject = {}
+
+    for line in fragment:
+        #Split the attribute name from the value
+        attribute, value = line.split(': ',1)
+        
+        #Attributes are converted to lowercase
+        attribute = attribute.lower()
+
+        #Multiple attributes are turned into an array
+        if attribute in ldapObject.keys(): 
+            #If we already have an array
+            if type(ldapObject[attribute]) == type([]):
+                #Simply append
+                ldapObject[attribute].append(value)
+            else:
+                #This is the second attribute, make it an array
+                ldapObject[attribute] = [ldapObject[attribute], value]
+        else:
+            #First occurence of this attribute for this object
+            ldapObject[attribute] = value
+
+    return ldapObject
+        

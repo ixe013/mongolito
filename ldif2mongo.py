@@ -1,7 +1,8 @@
 import sys
 from optparse import OptionParser
 
-import LDIF2Python
+import ldif2dict
+import printldif
 
 
 usage = "usage: %prog [options] arg1 arg2"
@@ -19,19 +20,22 @@ parser.add_option("-f",
 def main():
     input_stream = sys.stdin
 
-    if options.filename == None:
-        print 'Reading from STDIN...'
-    else:
+    if not options.filename == None:
         input_stream = open(options.filename, "r")
 
-    lines = LDIF2Python.extractLDIFFragment(input_stream)
+    #Prime the pump by reading a first entry
+    lineCount, lines = ldif2dict.extractLDIFFragment(input_stream)
 
+    #As long as we are not done with the file
     while(len(lines) > 0):
-        for s in lines:
-            print s
+        #convert the raw lines to a Python dict (easier to parse)
+        ldapObject = ldif2dict.convertLDIFFragment(lines)
+        #Print, sorted. 
+        printldif.printDictAsLDIF(ldapObject)
 
-        lines = LDIF2Python.extractLDIFFragment(input_stream)
-        print '----8<--- END OF FRAGMENT -----8<------'
+        #Read the next object
+        lineCount, lines = ldif2dict.extractLDIFFragment(input_stream)
+
         
     if options.filename != None:
         input_stream.close()
