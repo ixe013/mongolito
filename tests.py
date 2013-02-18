@@ -1,6 +1,6 @@
 import unittest
-import ldif2dict
 
+import ldif2dict
 import importExceptions
 import printldif
 
@@ -13,6 +13,9 @@ class MyTest(unittest.TestCase):
            'version: version attribute is ignored if first in fragment\n',
            '\n',
            '\n',
+           '#This is a special\n',
+           ' multi-line comment\n',
+           ' with a lot of lines\n',
            'First line\n',
            '#Comment\n',
            'objectClass: top\n',
@@ -47,7 +50,6 @@ class MyTest(unittest.TestCase):
     def testErrorReportingForFragments(self):
         '''Tests that exceptions are reported'''
         rawLines = [
-            '#Comments are still ignored\n',
             ' Starts with a space throws exception',
             #Processing stops, no need for a trailing \n
         ]
@@ -93,7 +95,7 @@ class MyTest(unittest.TestCase):
            'enable':'TRUE',
         }
 
-        printldif.printDictAsLDIF(expectedDict)
+        #printldif.printDictAsLDIF(expectedDict)
 
 
 if __name__ == "__main__":

@@ -27,6 +27,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
          - does not decode base64 encoded values
        '''
     lines = []
+    lastLineWasComment = False
 
     z = importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
 
@@ -44,11 +45,13 @@ def extractLDIFFragment(inputStream, lineNumber=0):
                 break
         #If this is a comment
         elif line[0] == '#':
+            #It might be multi-line
+            lastLineWasComment = True
             #Leave it alone (ignore it)
             continue
 
         #Is this line the continuation of the previous line ?
-        elif not line.find(' ') == 0:
+        elif not line.startswith(' '):
             #Ignore leading version, but only if it is
             #the first item in the fragment
             if line.find('version: ') == 0 and len(lines) == 0:
@@ -58,12 +61,19 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             lines.append( line.strip() )
             continue
 
+        #If the last line was a comment...
+        elif lastLineWasComment:
+            #Then we just hit a multi line comment
+            continue
         elif len(lines) > 0:
             #Append this to the last line
             lines[len(lines)-1] += line.strip()
 
         else:
-            raise importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
+            raise importExceptions.LDIFParsingException(lineNumber, ('LDIF fragment starts with continuation line: %s' % line ))
+
+        lastLineWasComment = False
+
     
     return (lineNumber, lines)
 
