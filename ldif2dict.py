@@ -87,10 +87,18 @@ def convertLDIFFragment(fragment, nosort = ['dn','objectclass']):
 
     for line in fragment:
         #Split the attribute name from the value
-        attribute, value = line.split(': ',1)
+        attribute, value = line.split(':',1)
         
         #Attributes are converted to lowercase
         attribute = attribute.lower()
+
+        #Is this value base64 encoded ?
+        if value[:1] == ':':
+            #We will support decoding later...
+            value = value[1:].lstrip()
+        else:
+            #String leading white space
+            value = value.lstrip()
 
         #Multiple attributes are turned into an array
         if attribute in ldapObject.keys(): 

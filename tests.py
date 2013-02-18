@@ -25,7 +25,7 @@ class MyTest(unittest.TestCase):
            ' World\n',
            ' !\n',
            'version: 1,\n',
-           'description: SnVzdGF0ZXN0Lg==\n',
+           'description:: SnVzdGF0ZXN0Lg==\n',
            'result: 0\n',
            'continue:\n',
            ' OnNextLine:\n',
@@ -40,7 +40,7 @@ class MyTest(unittest.TestCase):
            'objectClass: top',
            'cn: Hello,World!',
            'version: 1',
-           'description: SnVzdGF0ZXN0Lg==',
+           'description:: SnVzdGF0ZXN0Lg==',
            'result: 0',
            'continue: OnNextLine',
         ]
@@ -69,7 +69,7 @@ class MyTest(unittest.TestCase):
            'objectClass: person',
            'version: 1',
            'cn: Hello:World!',
-           'description: SnVzdGF0ZXN0Lg==',
+           'description:: SnVzdGF0ZXN0Lg==',
            'enable: TRUE',
         ]
         
@@ -83,9 +83,10 @@ class MyTest(unittest.TestCase):
         }
 
         entry = ldif2dict.convertLDIFFragment(parsedFragment)
-
+ 
         #self.assertEqual(expectedDict, entry, 'Dictionary do not match')
         self.assertEqual(expectedDict, entry, 'Dictionary do not match')
+
 
     def testPrint(self):
         expectedDict = {
