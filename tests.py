@@ -12,6 +12,8 @@ class MyTest(unittest.TestCase):
            '\n',
            'version: version attribute is ignored if first in fragment\n',
            '\n',
+           'SEARCH: ignored, case insensitive\n',
+           'result: \n'
            '\n',
            '#This is a special\n',
            ' multi-line comment\n',
@@ -24,6 +26,7 @@ class MyTest(unittest.TestCase):
            ' !\n',
            'version: 1,\n',
            'description: SnVzdGF0ZXN0Lg==\n',
+           'result: 0\n',
            'continue:\n',
            ' OnNextLine:\n',
            '#Trailing comments are ignored, not forwarded\n',
@@ -38,6 +41,7 @@ class MyTest(unittest.TestCase):
            'cn: Hello,World!',
            'version: 1',
            'description: SnVzdGF0ZXN0Lg==',
+           'result: 0',
            'continue: OnNextLine',
         ]
         

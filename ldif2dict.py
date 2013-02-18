@@ -28,6 +28,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
        '''
     lines = []
     lastLineWasComment = False
+    leadingAttributesToIgnore = ['version: ', 'search: ', 'result: ']
 
     z = importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
 
@@ -54,7 +55,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
         elif not line.startswith(' '):
             #Ignore leading version, but only if it is
             #the first item in the fragment
-            if line.find('version: ') == 0 and len(lines) == 0:
+            if filter(line.lower().startswith, leadingAttributesToIgnore) and len(lines) == 0:
                 continue
                 
             #It is a new attribute:value pair, save it
