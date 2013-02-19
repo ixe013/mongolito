@@ -25,7 +25,9 @@ class MyTest(unittest.TestCase):
            ' World\n',
            ' !\n',
            'version: 1,\n',
-           'description:: SnVzdGF0ZXN0Lg==\n',
+           'description:: R2Vzd\r',
+           ' GlvbiBkZXMgZG9tYWluZXMgZGUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVu\n',
+           ' cyBwYXMgZGUgYmFzZXMgZGUgZG9ubsOpZXMu\n',
            'result: 0\n',
            'continue:\n',
            ' OnNextLine:\n',
@@ -40,7 +42,7 @@ class MyTest(unittest.TestCase):
            'objectClass: top',
            'cn: Hello,World!',
            'version: 1',
-           'description:: SnVzdGF0ZXN0Lg==',
+           'description:: R2VzdGlvbiBkZXMgZG9tYWluZXMgZGUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVucyBwYXMgZGUgYmFzZXMgZGUgZG9ubsOpZXMu',
            'result: 0',
            'continue: OnNextLine',
         ]
@@ -69,7 +71,7 @@ class MyTest(unittest.TestCase):
            'objectClass: person',
            'version: 1',
            'cn: Hello:World!',
-           'description:: SnVzdGF0ZXN0Lg==',
+           'description:: SnVzdCBhIHRlc3QuLi4g',
            'enable: TRUE',
         ]
         
@@ -78,7 +80,7 @@ class MyTest(unittest.TestCase):
            'objectclass':['top', 'user', 'person'],  #Makes an array
            'version':'1',
            'cn':'Hello:World!',
-           'description':'SnVzdGF0ZXN0Lg==',
+           'description':'Just a test... ',
            'enable':'TRUE',
         }
 
@@ -95,7 +97,7 @@ class MyTest(unittest.TestCase):
            'objectclass':['top', 'user', 'person'],  #Makes an array
            'version':'1',
            'cn':'Hello:World!',
-           'description':'SnVzdGF0ZXN0Lg==',
+           'description':'R2VzdGlvbiBkZXMgZG9tYWluZXMgZGUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVucyBwYXMgZGUgYmFzZXMgZGUgZG9ubsOpZXMu',
            'uniquemember':['cn=orcladmin,cn=users,dc=delegation,dc=qc,dc=ca', 'cn=orcladmin,cn=users,dc=ireq,dc=qc,dc=ca', 'cn=reportsapp,cn=products,cn=oraclecontext,dc=ireq,dc=qc,dc=ca'],
            'enable':'TRUE',
         }

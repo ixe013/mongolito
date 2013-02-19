@@ -8,4 +8,3 @@ class LDIFParsingException(Exception):
         return 'Error line %d: %s' % (line, message)
 
 
-global LDIFParsingException

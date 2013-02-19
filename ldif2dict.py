@@ -30,8 +30,6 @@ def extractLDIFFragment(inputStream, lineNumber=0):
     lastLineWasComment = False
     leadingAttributesToIgnore = ['version: ', 'search: ', 'result: ']
 
-    z = importExceptions.LDIFParsingException(lineNumber, 'LDIF fragment starts with continuation line')
-
     for line in inputStream:
         #Simple line counter
         lineNumber += 1
@@ -44,6 +42,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             else:
                 #Found the end of the fragment
                 break
+            
         #If this is a comment
         elif line[0] == '#':
             #It might be multi-line
@@ -60,12 +59,15 @@ def extractLDIFFragment(inputStream, lineNumber=0):
                 
             #It is a new attribute:value pair, save it
             lines.append( line.strip() )
-            continue
+            
 
         #If the last line was a comment...
         elif lastLineWasComment:
             #Then we just hit a multi line comment
+            #We don't reset lastLineWasComment, we are still in one!
             continue
+        
+
         elif len(lines) > 0:
             #Append this to the last line
             lines[len(lines)-1] += line.strip()
@@ -94,11 +96,10 @@ def convertLDIFFragment(fragment, nosort = ['dn','objectclass']):
 
         #Is this value base64 encoded ?
         if value[:1] == ':':
-            #We will support decoding later...
-            value = value[1:].lstrip()
+            value = base64.b64decode(value[1:].strip())
         else:
             #String leading white space
-            value = value.lstrip()
+            value = value.strip()
 
         #Multiple attributes are turned into an array
         if attribute in ldapObject.keys(): 
