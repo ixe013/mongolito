@@ -23,13 +23,13 @@ def printDictAsLDIF(ldapObject):
     #This loops prints what is left
     for name in sorted(ldapObject.keys()):
         #Must check type, because string is iterable
-        if type(ldapObject[name]) == type(''):
+        if type(ldapObject[name]) in [type(''), type(u'')]:
             #Single value
-            print name+':',ldapObject[name]
+            print name+u':',ldapObject[name]
         else:
             #Print values sorted
             for value in sorted(ldapObject[name]):
-                print name+':',value
+                print name+u':',value
 
     #Ends with an empty line
     print

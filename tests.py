@@ -71,22 +71,23 @@ class MyTest(unittest.TestCase):
            'objectClass: person',
            'version: 1',
            'cn: Hello:World!',
-           'description:: SnVzdCBhIHRlc3QuLi4g',
+           'description:: SidhaSBkw6lqw6AgdGVzdMOpIMOnYSBldCBqJ2FpIGTDqXRlc3TDqSDDp2E=',
+           'category:: RU5SRUdJU1RSw4lF',
            'enable: TRUE',
         ]
         
         expectedDict = {
-           'first;line':'8',    #Converts to lowercase
-           'objectclass':['top', 'user', 'person'],  #Makes an array
-           'version':'1',
-           'cn':'Hello:World!',
-           'description':'Just a test... ',
-           'enable':'TRUE',
+           'first;line':u'8',    #Converts to lowercase
+           'objectclass':[u'top', u'user', u'person'],  #Makes an array
+           'version':u'1',
+           'cn':u'Hello:World!',
+           'description':u"J'ai d\xe9j\xe0 test\xe9 \xe7a et j'ai d\xe9test\xe9 \xe7a",
+           'category':u'ENREGISTR\xc9E',
+           'enable':u'TRUE',
         }
 
         entry = ldif2dict.convertLDIFFragment(parsedFragment)
  
-        #self.assertEqual(expectedDict, entry, 'Dictionary do not match')
         self.assertEqual(expectedDict, entry, 'Dictionary do not match')
 
 
