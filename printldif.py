@@ -25,11 +25,11 @@ def printDictAsLDIF(ldapObject):
         #Must check type, because string is iterable
         if type(ldapObject[name]) in [type(''), type(u'')]:
             #Single value
-            print name+u':',ldapObject[name]
+            print name+u':',ldapObject[name].encode('utf-8')
         else:
             #Print values sorted
             for value in sorted(ldapObject[name]):
-                print name+u':',value
+                print name+u':',value.encode('utf-8')
 
     #Ends with an empty line
     print
