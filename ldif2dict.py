@@ -73,7 +73,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             lines[len(lines)-1] += line.strip()
 
         else:
-            raise importExceptions.LDIFParsingException(lineNumber, ('LDIF fragment starts with continuation line: %s' % line ))
+            raise importExceptions.LDIFParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
 
         lastLineWasComment = False
 
@@ -81,7 +81,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
     return (lineNumber, lines)
 
 
-def convertLDIFFragment(fragment, nosort = ['dn','objectclass']):
+def convertLDIFFragment(fragment):
     '''Converts a fragment to a dictionary. It will :
           - convert attribute names to lowercase
           - create a list of values if an attribute has multiple values '''

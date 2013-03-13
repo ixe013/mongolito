@@ -25,7 +25,7 @@ def main():
         input_stream = open(options.filename, "r")
 
     #Prime the pump by reading a first entry
-    lineCount, lines = ldif2dict.extractLDIFFragment(input_stream)
+    lineCount, lines = ldif2dict.extractLDIFFragment(input_stream, 0)
 
     try:
         #As long as we are not done with the file
@@ -37,12 +37,13 @@ def main():
                 printldif.printDictAsLDIF(ldapObject)
 
                 #Read the next object
-                c, lines = ldif2dict.extractLDIFFragment(input_stream)
+                c, lines = ldif2dict.extractLDIFFragment(input_stream, lineCount)
 
                 lineCount += c
 
-            except LDIFParsingException(lpe):
-                print lpe
+            except importExceptions.LDIFParsingException as lpe:
+                print >> sys.stderr, lpe
+                break
 
     except:
         print 'Stopped at line %d', lineCount
