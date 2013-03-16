@@ -11,6 +11,8 @@ class MyTest(unittest.TestCase):
            '\n',
            '\n',
            'version: version attribute is ignored if first in fragment\n',
+           ' it could as well be a multi-line version. The following \n',
+           ' blank line is also ignored. \n',
            '\n',
            'SEARCH: ignored, case insensitive\n',
            'result: \n'
@@ -18,7 +20,8 @@ class MyTest(unittest.TestCase):
            '#This is a special\n',
            ' multi-line comment\n',
            ' with a lot of lines\n',
-           'First line\n',
+           'First line: asdf\n',
+           'changeType: 0\n',
            '#Comment\n',
            'objectClass: top\n',
            'cn: Hello,\n',
@@ -36,9 +39,9 @@ class MyTest(unittest.TestCase):
            'Remaining lines are left untouched\n',
            '\n',
         ]
-        
+
         expectedLines = [
-           'First line',
+           'First line: asdf',
            'objectClass: top',
            'cn: Hello,World!',
            'version: 1',

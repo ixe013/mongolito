@@ -27,8 +27,12 @@ def extractLDIFFragment(inputStream, lineNumber=0):
          - does not decode base64 encoded values
        '''
     lines = []
-    lastLineWasComment = False
-    leadingAttributesToIgnore = ['version: ', 'search: ', 'result: ']
+    lastLineWasIgnored = False
+    leadingAttributesToIgnore = [
+      'result:', 
+      'search: ', 
+      'version: ', 
+    ]
 
     for line in inputStream:
         #Simple line counter
@@ -46,7 +50,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
         #If this is a comment
         elif line[0] == '#':
             #It might be multi-line
-            lastLineWasComment = True
+            lastLineWasIgnored = True
             #Leave it alone (ignore it)
             continue
 
@@ -55,6 +59,11 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             #Ignore leading version, but only if it is
             #the first item in the fragment
             if filter(line.lower().startswith, leadingAttributesToIgnore) and len(lines) == 0:
+                lastLineWasIgnored = True
+                continue
+            #or if it is a changetype directive
+            if line.lower().startswith('changetype:'):
+                lastLineWasIgnored = True
                 continue
                 
             #It is a new attribute:value pair, save it
@@ -62,9 +71,9 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             
 
         #If the last line was a comment...
-        elif lastLineWasComment:
+        elif lastLineWasIgnored:
             #Then we just hit a multi line comment
-            #We don't reset lastLineWasComment, we are still in one!
+            #We don't reset lastLineWasIgnored, we are still ignoring!
             continue
         
 
@@ -75,7 +84,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
         else:
             raise importExceptions.LDIFParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
 
-        lastLineWasComment = False
+        lastLineWasIgnored = False
 
     
     return (lineNumber, lines)

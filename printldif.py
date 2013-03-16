@@ -34,3 +34,8 @@ def printDictAsLDIF(ldapObject):
     #Ends with an empty line
     print
             
+
+
+def createPrintOutput(args):
+    'Trivial polymorphic helper'
+    return printDictAsLDIF
