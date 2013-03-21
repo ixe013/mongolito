@@ -19,14 +19,20 @@ class saveInMongoHelper(object):
     def __call__(self, ldapObject):
         return saveInMongo(self.collection, ldapObject)
 
-def createMongoOutput(args):
+
+def createMongoOutput(database, collection):
     'Returs a callable object that will save ldap objects to a Mongo database'
     connection = pymongo.MongoClient()
 
     #The great thing about Mongo is that neither the database nor the collections
     #need to exist before hand.
     #That's a good thing, right ?
-    collection = connection[args.database][args.collection]
+    collection = connection[database][collection]
 
     return saveInMongoHelper(collection)
+
+
+def createMongoOutputFromArgs(args):
+    return createMongoOutput(args.database, args.collection)
+
 

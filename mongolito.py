@@ -62,19 +62,22 @@ def ldifExtractionIterator(input_stream, lineCount=0):
 def main():
     input_stream = sys.stdin
 
+    num_objects = 0
+
     if not args.filename == None:
         input_stream = open(args.filename, "r")
 
     output = None
 
     if args.useMongo:
-        output = saveInMongo.createMongoOutput(args)    
+        output = saveInMongo.createMongoOutputFromArgs(args)    
     else:
         output = printldif.createPrintOutput(args)
 
     try:
         for ldapObject in ldifExtractionIterator(input_stream):
             output(ldapObject)
+            num_objects += 1
 
     except importExceptions.LDIFParsingException as lpe:
         print >> sys.stderr, lpe
@@ -83,6 +86,7 @@ def main():
     if args.filename != None:
         input_stream.close()
 
+    print >> sys.stderr, num_objects, 'objects imported.'
 
 if __name__ == "__main__":
     main()
