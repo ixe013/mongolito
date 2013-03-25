@@ -2,7 +2,7 @@ import argparse
 import pymongo
 import sys
 
-import ldif2dict
+import readLDIF
 import printldif
 import saveInMongo
 import importExceptions
@@ -43,12 +43,12 @@ def ldifExtractionIterator(input_stream, lineCount=0):
     blank line is found'''
     while True:
         #Read the next object
-        c, lines = ldif2dict.extractLDIFFragment(input_stream, lineCount)
+        c, lines = readLDIF.extractLDIFFragment(input_stream, lineCount)
 
         #If an object was found
         if len(lines) > 0:
             #convert the raw lines to a Python dict 
-            ldapObject = ldif2dict.convertLDIFFragment(lines)
+            ldapObject = readLDIF.convertLDIFFragment(lines)
             lineCount += c
 
             #return that object

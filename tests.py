@@ -1,6 +1,6 @@
 import unittest
 
-import ldif2dict
+import readLDIF
 import importExceptions
 import printldif
 
@@ -50,7 +50,7 @@ class MyTest(unittest.TestCase):
            'continue: OnNextLine',
         ]
         
-        linecount, readLines = ldif2dict.extractLDIFFragment(rawLines)
+        linecount, readLines = readLDIF.extractLDIFFragment(rawLines)
 
         self.assertEqual(len(rawLines)-2, linecount, 'Line count does not match.')
         self.assertEqual(len(expectedLines), len(readLines), 'Missing or extra lines.')
@@ -63,7 +63,7 @@ class MyTest(unittest.TestCase):
             #Processing stops, no need for a trailing \n
         ]
         
-        self.assertRaises(importExceptions.LDIFParsingException, ldif2dict.extractLDIFFragment, rawLines)
+        self.assertRaises(importExceptions.LDIFParsingException, readLDIF.extractLDIFFragment, rawLines)
 
 
     def testConvertFragmentFeatures(self):
@@ -89,7 +89,7 @@ class MyTest(unittest.TestCase):
            'enable':u'TRUE',
         }
 
-        entry = ldif2dict.convertLDIFFragment(parsedFragment)
+        entry = readLDIF.convertLDIFFragment(parsedFragment)
  
         self.assertEqual(expectedDict, entry, 'Dictionary do not match')
 
