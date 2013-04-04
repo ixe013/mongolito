@@ -1,4 +1,28 @@
+import argparse
 import pymongo
+ 
+
+def addArguments(parser):
+    group = parser.add_argument_group('Export to MongoDB database')
+    group.add_argument("-m",
+                      "--mongo", dest="useMongo",
+                      action="store_true",
+                      help="Use a MongoDB to store the results")
+     
+    #Same names as mongoimport
+    group.add_argument("-d",
+                      "--db", dest="database",
+                      default='test',
+                      help="The MongoDB database to use")
+     
+    #Same names as mongoimport
+    group.add_argument("-c",
+                      "--collection", dest="collection",
+                      default='mongolito',
+                      help="The MongoDB collection to use")
+
+    return parser
+
  
 def saveInMongo(collection, ldapObject):
     '''Saves the ldapObject in a Mongo database

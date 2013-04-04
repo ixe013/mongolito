@@ -8,36 +8,6 @@ import saveInMongo
 import importExceptions
 
 
-#TODO Maybe we should move this to its own file ^
-parser = argparse.ArgumentParser()
- 
-parser.add_argument("-f",
-                  "--file", dest="filename",
-                  help="The LDIF file to import")
- 
-parser.add_argument("-m",
-                  "--mongo", dest="useMongo",
-                  action="store_true",
-                  help="Use a MongoDB to store the results")
- 
-#Same names as mongoimport
-parser.add_argument("-d",
-                  "--db", dest="database",
-                  default='test',
-                  help="The MongoDB database to use")
- 
-#Same names as mongoimport
-parser.add_argument("-c",
-                  "--collection", dest="collection",
-                  default='mongolito',
-                  help="The MongoDB collection to use")
- 
-
- 
-#Parse the command line
-args = parser.parse_args()
-
-
 def ldifExtractionIterator(input_stream, lineCount=0):
     '''This generator pulls strings from the input_stream until a terminating
     blank line is found'''
@@ -59,13 +29,8 @@ def ldifExtractionIterator(input_stream, lineCount=0):
             break
 
 
-def main():
-    input_stream = sys.stdin
-
+def main(args):
     num_objects = 0
-
-    if not args.filename == None:
-        input_stream = open(args.filename, "r")
 
     output = None
 
@@ -75,7 +40,7 @@ def main():
         output = printldif.createPrintOutput(args)
 
     try:
-        for ldapObject in ldifExtractionIterator(input_stream):
+        for ldapObject in ldifExtractionIterator(args.ldiffile):
             output(ldapObject)
             num_objects += 1
 
@@ -83,11 +48,17 @@ def main():
         print >> sys.stderr, lpe
 
         
-    if args.filename != None:
-        input_stream.close()
-
     print >> sys.stderr, num_objects, 'objects imported.'
 
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+     
+    #Ask each module to add their arguments
+    parser = readLDIF.addArguments(parser)
+    parser = saveInMongo.addArguments(parser)
+     
+    #Parse the command line
+    main(parser.parse_args())
+
 

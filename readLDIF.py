@@ -18,7 +18,19 @@ Will produce the following Python dict :
 '''
 import base64
 import importExceptions
+import argparse
 
+
+def addArguments(parser):
+    group = parser.add_argument_group('Import LDIF file')
+    group.add_argument("-l",
+                      "--ldif", dest="ldiffile",
+                      type=argparse.FileType('r'),
+                      help="The LDIF file to import. Use - for stdin")
+
+    return parser
+
+ 
 def extractLDIFFragment(inputStream, lineNumber=0):
     '''Reads a LDIF file, stopping at the first blank line.
        This function :
