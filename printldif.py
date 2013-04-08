@@ -1,3 +1,39 @@
+import textwrap
+import base64
+
+def RFC2849WrappedOuput(attribute, value):
+    '''Wraps the value in a RFC2849 compliant manner.
+    Returns a array of lines to print. If the value can 
+    be printed as-is, a single item array is returned'''
+    MAX_LINE = 76
+    line_separator = ': '
+
+    #Sensible default
+    result = [attribute + line_separator + value]
+
+    if len(attribute) + len(value) + len(line_separator) > MAX_LINE:
+        encoded_line_separator = ':: '
+        wrapper = textwrap.TextWrapper()
+
+        #Wrap length is the maximum line length, minus the leading space
+        wrapper.width=MAX_LINE-1
+
+        #The initial whitespace will be replaced by the attribute name
+        #and ::, the encoded line separator.
+        wrapper.initial_indent=' '*(len(attribute)+len(encoded_line_separator))
+
+        #Other lines begin with a single space
+        wrapper.subsequent_indent=' '
+
+        #Wrap the whole thing
+        result = wrapper.wrap(base64.b64encode(value))
+
+        #Remove the leading blank space with the attribute name
+        result[0] = attribute + encoded_line_separator + result[0].strip()
+        
+    return result
+    
+
 def printDictAsLDIF(ldapObject):
     '''Prints a Python dict that represents a ldap object in a sorted matter
          dn is printed first
@@ -8,6 +44,7 @@ def printDictAsLDIF(ldapObject):
        method'''
 
     print 'dn:', ldapObject['dn']
+
     #Remove the attributes we already printed
     del ldapObject['dn']
     
@@ -39,3 +76,8 @@ def printDictAsLDIF(ldapObject):
 def createPrintOutput(args):
     'Trivial polymorphic helper'
     return printDictAsLDIF
+
+
+if __name__ == '__main__':
+    for l in RFC2849WrappedOuput('dn', 'Bonjour a tous mes amis de la Guadeloupe'*10):
+        print l
