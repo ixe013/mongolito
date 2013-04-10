@@ -1,5 +1,6 @@
 import textwrap
 import base64
+import unittest
 
 def RFC2849WrappedOuput(attribute, value):
     '''Wraps the value in a RFC2849 compliant manner.
@@ -78,6 +79,3 @@ def createPrintOutput(args):
     return printDictAsLDIF
 
 
-if __name__ == '__main__':
-    for l in RFC2849WrappedOuput('dn', 'Bonjour a tous mes amis de la Guadeloupe'*10):
-        print l
