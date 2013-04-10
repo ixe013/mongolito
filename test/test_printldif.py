@@ -21,9 +21,9 @@ class ModuleTest(unittest.TestCase):
     def testRFC2849WrappedOuput(self):
         attribute = 'l'
         value = 'Bonjour a tous mes amis de la Guadeloupe'*7
-        print 'YO'
+
         for l in printldif.RFC2849WrappedOuput(attribute, value):
-            self.assertTrue(len(l)<=7, 'Line not wrapped')
+            self.assertTrue(len(l)<=76, 'Line not wrapped (%d chars, %s)' % (len(l), l))
 
 
 if __name__ == "__main__":
