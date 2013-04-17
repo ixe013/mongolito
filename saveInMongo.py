@@ -1,12 +1,13 @@
 import argparse
 import pymongo
+import bson
  
 
 def addArguments(parser):
-    group = parser.add_argument_group('Export to MongoDB database')
+    group = parser.add_argument_group('Import in a MongoDB database')
     group.add_argument("-m",
-                      "--mongo", dest="useMongo",
-                      action="store_true",
+                      "--mongo", dest="mongoHost",
+                      default=None,
                       help="Use a MongoDB to store the results")
      
     #Same names as mongoimport
@@ -44,9 +45,9 @@ class saveInMongoHelper(object):
         return saveInMongo(self.collection, ldapObject)
 
 
-def createMongoOutput(database, collection):
+def createMongoOutput(host, database, collection):
     'Returs a callable object that will save ldap objects to a Mongo database'
-    connection = pymongo.MongoClient()
+    connection = pymongo.MongoClient(host)
 
     #The great thing about Mongo is that neither the database nor the collections
     #need to exist before hand.
@@ -57,6 +58,6 @@ def createMongoOutput(database, collection):
 
 
 def createMongoOutputFromArgs(args):
-    return createMongoOutput(args.database, args.collection)
+    return createMongoOutput(args.mongoHost, args.database, args.collection)
 
 

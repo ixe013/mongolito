@@ -1,39 +1,56 @@
 import textwrap
 import base64
-import unittest
+import string
 
-def RFC2849WrappedOuput(attribute, value):
+
+RFC2849_MAX_LINE = 76
+
+def RFC2849WrappedOuput(attribute, separator, value):
     '''Wraps the value in a RFC2849 compliant manner.
-    Returns a array of lines to print. If the value can 
-    be printed as-is, a single item array is returned'''
-    MAX_LINE = 76
-    line_separator = ': '
+    Returns a array of lines to print.'''
+    wrapper = textwrap.TextWrapper()
 
-    #Sensible default
-    result = [attribute + line_separator + value]
+    #Wrap length is the maximum line length, minus the leading space
+    wrapper.width=RFC2849_MAX_LINE-1
 
-    if len(attribute) + len(value) + len(line_separator) > MAX_LINE:
-        encoded_line_separator = ':: '
-        wrapper = textwrap.TextWrapper()
+    #The initial whitespace will be replaced by the attribute name
+    #and ::, the encoded line separator, later on in this method
+    wrapper.initial_indent=' '*(len(attribute)+len(separator))
 
-        #Wrap length is the maximum line length, minus the leading space
-        wrapper.width=MAX_LINE-1
+    #Other lines begin with a single space
+    wrapper.subsequent_indent=' '
 
-        #The initial whitespace will be replaced by the attribute name
-        #and ::, the encoded line separator.
-        wrapper.initial_indent=' '*(len(attribute)+len(encoded_line_separator))
+    #Wrap the whole thing
+    result = wrapper.wrap(base64.b64encode(value))
 
-        #Other lines begin with a single space
-        wrapper.subsequent_indent=' '
-
-        #Wrap the whole thing
-        result = wrapper.wrap(base64.b64encode(value))
-
-        #Remove the leading blank space with the attribute name
-        result[0] = attribute + encoded_line_separator + result[0].strip()
+    #Remove the leading blank space with the attribute name
+    result[0] = attribute + separator + result[0].strip()
         
     return result
     
+
+def makePrintableAttributeAndValue(attribute, value):
+    separator = ':'
+
+    #If line ends with a space, we must base64 it.
+    if value[-1:] == ' ':
+        separator = separator*2
+        value = base64.b64encode(value)
+
+    #Else if is has anything other than plain old ascii characters
+    #(binary values like jpeg or certificates fall under this)
+    elif all(ord(c) >= ord(' ') and ord(c) < 127 and c in string.printable for c in value):
+        separator = separator*2
+        value = base64.b64encode(value)
+            
+
+    #Is line does too long to fit on a RFC2849 line of 76 chars ?
+    return RFC2849WrappedOuput(attribute, separator+' ', value)
+
+
+def printAttributeAndValue(printable):
+    print '\n'.join(printable)
+
 
 def printDictAsLDIF(ldapObject):
     '''Prints a Python dict that represents a ldap object in a sorted matter
@@ -44,14 +61,17 @@ def printDictAsLDIF(ldapObject):
        Hence any valid unsorted ldif will comme out the same way from this 
        method'''
 
-    print 'dn:', ldapObject['dn']
+    #dn is always first
+    #print 'dn:', ldapObject['dn']
+    printAttributeAndValue(makePrintableAttributeAndValue('dn',ldapObject['dn']))
 
     #Remove the attributes we already printed
     del ldapObject['dn']
     
+    #Now with the object classes
     try:
         for objclass in sorted(ldapObject['objectclass']):
-            print 'objectclass:',objclass
+            printAttributeAndValue(makePrintableAttributeAndValue('objectclass',objclass))
         del ldapObject['objectclass']
 
     except KeyError:
@@ -60,19 +80,19 @@ def printDictAsLDIF(ldapObject):
 
     #This loops prints what is left
     for name in sorted(ldapObject.keys()):
-        #Must check type, because string is iterable
+        #Must check type instead of begging for forgiveness
+        #because string is iterable but will not produce the
+        #output we are looking for
         if type(ldapObject[name]) in [type(''), type(u'')]:
-            #Single value
-            print name+u':',ldapObject[name].encode('utf-8')
+            printAttributeAndValue(makePrintableAttributeAndValue(name,ldapObject[name]))
         else:
-            #Print values sorted
+            #Print values prefixed with attribute name, sorted
             for value in sorted(ldapObject[name]):
-                print name+u':',value.encode('utf-8')
+                printAttributeAndValue(makePrintableAttributeAndValue(name,value))
 
     #Ends with an empty line
     print
             
-
 
 def createPrintOutput(args):
     'Trivial polymorphic helper'

@@ -1,3 +1,4 @@
+"""This is some text about mongolito"""
 import argparse
 import pymongo
 import sys
@@ -34,7 +35,7 @@ def main(args):
 
     output = None
 
-    if args.useMongo:
+    if args.mongoHost is not None:
         output = saveInMongo.createMongoOutputFromArgs(args)    
     else:
         output = printldif.createPrintOutput(args)
@@ -47,6 +48,8 @@ def main(args):
     except importExceptions.LDIFParsingException as lpe:
         print >> sys.stderr, lpe
 
+    except UnicodeError as ue:
+        print >> sys.stderr, ue
         
     print >> sys.stderr, num_objects, 'objects imported.'
 

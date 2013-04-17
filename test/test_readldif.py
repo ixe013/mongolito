@@ -27,9 +27,9 @@ class MyTest(unittest.TestCase):
            ' World\n',
            ' !\n',
            'version: 1,\n',
-           'description:: R2Vzd\r',
-           ' GlvbiBkZXMgZG9tYWluZXMgZGUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVu\n',
-           ' cyBwYXMgZGUgYmFzZXMgZGUgZG9ubsOpZXMu\n',
+           'description:: R2VzdGlvbiBkZXMgZG9tYWluZXMgZ\n',
+           ' GUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVucyBwYXM\n',
+           ' gZGUgYmFzZXMgZGUgZG9ubsOpZXMu\n',
            'result: 0\n',
            'continue:\n',
            ' OnNextLine:\n',
@@ -74,18 +74,18 @@ class MyTest(unittest.TestCase):
            'version: 1',
            'cn: Hello:World!',
            'description:: SidhaSBkw6lqw6AgdGVzdMOpIMOnYSBldCBqJ2FpIGTDqXRlc3TDqSDDp2E=',
-           'category:: RU5SRUdJU1RSw4lF',
+           'category:: 5Za25qWt6YOo',
            'enable: TRUE',
         ]
         
         expectedDict = {
-           'first;line':u'8',    #Converts to lowercase
-           'objectclass':[u'top', u'user', u'person'],  #Makes an array
-           'version':u'1',
-           'cn':u'Hello:World!',
-           'description':u"J'ai d\xe9j\xe0 test\xe9 \xe7a et j'ai d\xe9test\xe9 \xe7a",
-           'category':u'ENREGISTR\xc9E',
-           'enable':u'TRUE',
+           'first;line':'8',    #Converts to lowercase
+           'objectclass':['top', 'user', 'person'],  #Makes an array
+           'version':'1',
+           'cn':'Hello:World!',
+           'description':"J'ai d\xc3\xa9j\xc3\xa0 test\xc3\xa9 \xc3\xa7a et j'ai d\xc3\xa9test\xc3\xa9 \xc3\xa7a",
+           'category':'\xe5\x96\xb6\xe6\xa5\xad\xe9\x83\xa8',
+           'enable':'TRUE',
         }
 
         entry = readLDIF.convertLDIFFragment(parsedFragment)

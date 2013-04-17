@@ -118,10 +118,10 @@ def convertLDIFFragment(fragment):
         #Is this value base64 encoded ?
         if value[:1] == ':':
             #Decode to a UTF-8 encoded Unicode String
-            value = base64.b64decode(value[1:].strip()).decode('utf-8')
+            value = base64.b64decode(value[1:].strip())
         else:
-            #String leading white space, and make it a unicode string
-            value = unicode(value.strip())
+            #String leading white space
+            value = value.strip()
 
         #Multiple attributes are turned into an array
         if attribute in ldapObject.keys(): 
