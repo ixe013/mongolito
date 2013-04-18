@@ -66,6 +66,7 @@ class MyTest(unittest.TestCase):
 
 
     def testConvertFragmentFeatures(self):
+        """Verifies that a parsed fragment is properly turned into a Python dict"""
         parsedFragment = [
            'First;line: 8',
            'objectClass: top',

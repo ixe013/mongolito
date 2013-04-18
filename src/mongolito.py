@@ -1,4 +1,7 @@
-"""This is some text about mongolito"""
+#!/usr/bin/python
+"""
+This is some text about mongolito.
+"""
 import argparse
 import pymongo
 import sys
