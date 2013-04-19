@@ -12,17 +12,32 @@ class ModuleTest(unittest.TestCase):
            'saisons':['printemps', '\xe5\x96\xb6\xe6\xa5\xad\xe9\x83\xa8', 'automne', 'hiver'], 
            'version':'1',
            'cn':'Hello:World!',
-           'uniquemember':['cn=orcladmin,cn=users,dc=delegation,dc=qc,dc=ca', 'cn=orcladmin,cn=users,dc=ireq,dc=qc,dc=ca'*10, 'cn=reportsapp,cn=products,cn=oraclecontext,dc=ireq,dc=qc,dc=ca'],
+           'uniquemember':['cn=orcladmin,cn=users,dc=delegation,dc=qc,dc=ca', 
+                           'cn=orcladmin,cn=users,dc=ireq,dc=qc,dc=ca'*10, 
+                           'cn=reportsapp,cn=products,cn=oraclecontext,dc=ireq,dc=qc,dc=ca'],
         }
 
         printldif.printDictAsLDIF(expectedDict)
 
-    def testRFC2849WrappedOuput(self):
-        attribute = 'l'
-        value = 'Bonjour a tous mes amis de la Guadeloupe'*7
 
-        for l in printldif.RFC2849WrappedOuput(attribute, ':', value):
-            self.assertTrue(len(l)<=76, 'Line not wrapped (%d chars, %s)' % (len(l), l))
+    def testRFC2849WrappedOuput(self):
+        rawline = 'Hello: World!'
+
+        for line in printldif.RFC2849WrappedOuput(rawline):
+            self.assertTrue(len(line)<=76, 'Line not wrapped (%d chars, %s)' % (len(line), line))
+
+        rawline = rawline * 15
+
+
+    def testMakePrintableAttributeAndValue(self):
+        '''Test that proper encoding of lines is applied.'''
+        attribute = 'Hello'
+        value =  'World!'
+        expected = 'Hello: World!'
+
+        returned = printldif.makePrintableAttributeAndValue(attribute, value)
+
+        self.assertEqual(expected, returned)
 
 
 if __name__ == "__main__":

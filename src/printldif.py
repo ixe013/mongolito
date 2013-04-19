@@ -5,28 +5,13 @@ import string
 
 RFC2849_MAX_LINE = 76
 
-def RFC2849WrappedOuput(attribute, separator, value):
-    '''Wraps the value in a RFC2849 compliant manner.
+def RFC2849WrappedOuput(line):
+    '''Slices the attribute-value pair (which might be base64
+    encoded at this point) into lines of at most 76 characters,
+    with each wrapped line begining with a single space.
+
     Returns a array of lines to print.'''
-    wrapper = textwrap.TextWrapper()
-
-    #Wrap length is the maximum line length, minus the leading space
-    wrapper.width=RFC2849_MAX_LINE-1
-
-    #The initial whitespace will be replaced by the attribute name
-    #and ::, the encoded line separator, later on in this method
-    wrapper.initial_indent=' '*(len(attribute)+len(separator))
-
-    #Other lines begin with a single space
-    wrapper.subsequent_indent=' '
-
-    #Wrap the whole thing
-    result = wrapper.wrap(base64.b64encode(value))
-
-    #Remove the leading blank space with the attribute name
-    result[0] = attribute + separator + result[0].strip()
-        
-    return result
+    return [line]
     
 
 def makePrintableAttributeAndValue(attribute, value):
@@ -39,17 +24,15 @@ def makePrintableAttributeAndValue(attribute, value):
 
     #Else if is has anything other than plain old ascii characters
     #(binary values like jpeg or certificates fall under this)
-    elif all(ord(c) >= ord(' ') and ord(c) < 127 and c in string.printable for c in value):
+    elif not all(ord(c) < ord(' ') or ord(c) > 127 or c in string.printable for c in value):
         separator = separator*2
         value = base64.b64encode(value)
             
-
-    #Is line does too long to fit on a RFC2849 line of 76 chars ?
-    return RFC2849WrappedOuput(attribute, separator+' ', value)
+    return attribute+separator+' '+value
 
 
 def printAttributeAndValue(printable):
-    print '\n'.join(printable)
+    print '\n'.join(RFC2849WrappedOuput(printable))
 
 
 def printDictAsLDIF(ldapObject):
