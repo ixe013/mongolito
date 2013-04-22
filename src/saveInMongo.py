@@ -3,6 +3,17 @@ import pymongo
 import bson
  
 
+class SaveException(Exception):
+    def __init__(self, line, dn, message):
+        self.line = line
+        self.message = message
+        self.dn = dn
+
+    def __str__(self):
+        return 'Error line %d "%s" : %s' % (self.line, self.dn, self.message)
+
+
+
 def addArguments(parser):
     group = parser.add_argument_group('Import in a MongoDB database')
     group.add_argument("-m",
@@ -33,7 +44,11 @@ def saveInMongo(collection, ldapObject):
         #Use the DN as a MongoDB object ID
         ldapObject['_id'] = ldapObject.pop('dn').lower()
  
-    collection.save(ldapObject)
+    try:
+        collection.save(ldapObject)
+
+    except bson.errors.InvalidStringData:
+        raise SaveException(-1, 'dn', ldapObject['_id'])
 
  
 class saveInMongoHelper(object):

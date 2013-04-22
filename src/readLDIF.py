@@ -78,6 +78,8 @@ def extractLDIFFragment(inputStream, lineNumber=0):
                 lastLineWasIgnored = True
                 continue
                 
+            #(bring 8 bit ascii values in the utf8 world)
+            line = line.decode('latin_1').encode('utf-8')
             #It is a new attribute:value pair, save it
             lines.append( line.strip() )
             
@@ -90,6 +92,8 @@ def extractLDIFFragment(inputStream, lineNumber=0):
         
 
         elif len(lines) > 0:
+            #(bring 8 bit ascii values in the utf8 world first)
+            line = line.decode('latin_1').encode('utf-8')
             #Append this to the last line
             lines[len(lines)-1] += line.strip()
 
