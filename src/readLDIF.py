@@ -21,16 +21,50 @@ import importExceptions
 import argparse
 
 
-def addArguments(parser):
-    group = parser.add_argument_group('Import LDIF file')
-    group.add_argument("-l",
-                      "--ldif", dest="ldiffile",
-                      type=argparse.FileType('r'),
-                      help="The LDIF file to import. Use - for stdin")
 
-    return parser
+class LDIFReader(object): 
+    def __init__(self, ldiffile):
+        self.ldiffile = ldiffile
 
- 
+
+    @staticmethod
+    def addArguments(parser):
+        group = parser.add_argument_group('Import LDIF file')
+        group.add_argument("-l",
+                          "--ldif", dest="ldiffile",
+                          type=argparse.FileType('r'),
+                          help="The LDIF file to import. Use - for stdin")
+
+        return parser
+
+
+    @staticmethod
+    def create(args):
+        return LDIFReader(args.ldiffile)
+
+    def searchRecords(self, query = {}):
+        #The line count is there just to put in the Exception record if something
+        #goes wrong.
+        lineCount = 0
+
+        while True:
+            #Read the next object
+            c, lines = extractLDIFFragment(self.ldiffile, lineCount)
+
+            #If an object was found
+            if len(lines) > 0:
+                #convert the raw lines to a Python dict 
+                ldapObject = convertLDIFFragment(lines)
+                lineCount += c
+
+                #return that object
+                yield ldapObject
+
+            #Reached the end of the input stream
+            else:
+                break
+
+
 def extractLDIFFragment(inputStream, lineNumber=0):
     '''Reads a LDIF file, stopping at the first blank line.
        This function :
@@ -147,24 +181,5 @@ def ldifInputFormat(args):
     '''This generator pulls strings from the input_stream until a terminating
     blank line is found'''
 
-    #The line count is there just to put in the Exception record if something
-    #goes wrong.
-    lineCount = 0
 
-    while True:
-        #Read the next object
-        c, lines = extractLDIFFragment(args.ldiffile, lineCount)
-
-        #If an object was found
-        if len(lines) > 0:
-            #convert the raw lines to a Python dict 
-            ldapObject = convertLDIFFragment(lines)
-            lineCount += c
-
-            #return that object
-            yield ldapObject
-
-        #Reached the end of the input stream
-        else:
-            break
 

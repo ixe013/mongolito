@@ -7,6 +7,7 @@ import pymongo
 import sys
 
 import readLDIF
+import readMongo
 import printldif
 import saveInMongo
 import importExceptions
@@ -26,42 +27,18 @@ def addArguments(parser):
     return parser
 
 
-def ldifExtractionIterator(input_stream, lineCount=0):
-    '''This generator pulls strings from the input_stream until a terminating
-    blank line is found'''
-    while True:
-        #Read the next object
-        c, lines = readLDIF.extractLDIFFragment(input_stream, lineCount)
 
-        #If an object was found
-        if len(lines) > 0:
-            #convert the raw lines to a Python dict 
-            ldapObject = readLDIF.convertLDIFFragment(lines)
-            lineCount += c
-
-            #return that object
-            yield ldapObject
-
-        #Reached the end of the input stream
-        else:
-            break
-
-
-def old_main(args):
+def process(source, filtering, output):
+    '''Somewhat generic loop. Could be refactored to filter, but
+    that would require to keep the list in memory.'''
     num_objects = 0
 
-    output = None
-
-    if args.mongoHost is not None:
-        output = saveInMongo.createMongoOutputFromArgs(args)    
-    else:
-        output = printldif.createPrintOutput(args)
-
     try:
-        for ldapObject in ldifExtractionIterator(args.ldiffile):
-            output(ldapObject)
+        for ldapObject in source.searchRecords(filtering):
+            output.write(ldapObject)
             num_objects += 1
 
+    #FIXME : Should make this polymorphic or better than catching Exception
     except importExceptions.LDIFParsingException as lpe:
         print >> sys.stderr, lpe
 
@@ -78,40 +55,35 @@ def createArgumentParser():
 
     parser = addArguments(parser)
      
-    #Ask each module to add their arguments
-    parser = readLDIF.addArguments(parser)
-    parser = saveInMongo.addArguments(parser)
-     
     return parser
 
 
-def createInputSource(args):
+def getInputClass(args):
     '''Creates a source object, sending the arguments object 
     to it so that it can configure itself '''
     inputSource = None
 
-    #Create the proper input object
+    #Returns the class to use
     if args.inputType == 'ldif':
         #LDIF input, create and configure
-        inputSource = ldifInputFormat(args)
+        inputSource = readLDIF.LDIFReader
     elif args.inputType == 'mongo':
         #Mongodb input, create and configure
-        #TODO
-        pass
+        inputSource = readMongo.MongoReader
 
     return inputSource
 
 
-def createOutputDestination(args):
+def getOutputClass(args):
     '''Creates a destination object, sending the arguments object 
     to it so that it can configure itself '''
     destination = None
 
     #Create the proper output object
     if args.outputType == 'ldif':
-        destination = printldif.createPrintOutput(args)
+        destination = printldif.LDIFPrinter
     elif args.outputType == 'mongo':
-        destination = saveInMongo.createMongoOutputFromArgs(args)    
+        destination = saveInMongo.MongoWriter
     
     return destination
 
@@ -120,17 +92,27 @@ def getSourceDestination():
     '''Returns the source and destination object as a tuple'''
     parser = createArgumentParser()
 
-    args = parser.parse_args()
+    #Start with the top level argument group, which will
+    #tell which end talks to which other end
+    args, other_args = parser.parse_known_args()
 
-    source = createInputSource(args)
-    destination= createOutputDestination(args)
+    #Create both end of the process
+    source = getInputClass(args)
+    destination = getOutputClass(args)
 
-    return source, destination
+    #Ask each end to add their arguments
+    parser = source.addArguments(parser)
+    parser = destination.addArguments(parser)
+
+    #Retreive the values for the new arguments
+    args = parser.parse_args(other_args)
+
+    return source.create(args), destination.create(args)
     
 
 def main():
     source, destination = getSourceDestination()
-    old_main(source, destination)
+    process(source, {}, destination)
 
 
 if __name__ == "__main__":

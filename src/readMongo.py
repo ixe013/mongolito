@@ -1,0 +1,62 @@
+import pymongo
+import re
+
+class MongoReader(object):
+
+    def __init__(host, database, collection):
+        '''Creates a cursor to the supplied MongoDB database'''
+        connection = pymongo.MongoClient(host)
+
+        #The great thing about Mongo is that neither the database nor the collections
+        #need to exist before hand.
+        #That's a good thing, right ?
+        self.collection = connection[database][collection]
+
+
+    @staticmethod
+    def addArguments(parser):
+        subparser = parser.add_subparsers(help='Read objects from a MongoDB database')
+        subparser.add_argument("-m",
+                          "--mongo", dest="mongoHost",
+                          default='localhost',
+                          help="The hostname where MongoDB resides")
+         
+        #Same names as mongoimport
+        subparser.add_argument("-d",
+                          "--db", dest="database",
+                          default='test',
+                          help="The MongoDB database to use")
+         
+        #Same names as mongoimport
+        subparser.add_argument("-c",
+                          "--collection", dest="collection",
+                          default='mongolito',
+                          help="The MongoDB collection to use")
+
+        return parser
+
+
+    @staticmethod
+    def create(args):
+        return MongoReader(args.mongoHost, args.database, args.collection)
+
+
+    def searchRecords(self, query = {}):
+        '''Thin wrapper over pymongo.collection.find'''
+        #Convert javascript style regular expressions to $regex format.
+        #Pymongo style $regex will be left alone
+        pattern = re.compile('/(.*)/')
+        #>>> re.sub(pattern, r"{ '$regex':'\1' }", jsre)
+        for attribute,value in filter(pattern.match, query.itervalues()):
+            try:
+                if pattern.match(value):
+                    query[attribute] = { '$regex':re.sub(pattern, r"{ '$regex':'\1' }", value) }
+            except TypeError:
+                #Beg for forgiveness
+                pass
+        
+        
+        #The cursor is already iterable
+        return self.collection.find(query) 
+
+
