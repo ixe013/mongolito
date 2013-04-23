@@ -142,3 +142,29 @@ def convertLDIFFragment(fragment):
 
     return ldapObject
         
+
+def ldifInputFormat(args):
+    '''This generator pulls strings from the input_stream until a terminating
+    blank line is found'''
+
+    #The line count is there just to put in the Exception record if something
+    #goes wrong.
+    lineCount = 0
+
+    while True:
+        #Read the next object
+        c, lines = extractLDIFFragment(args.ldiffile, lineCount)
+
+        #If an object was found
+        if len(lines) > 0:
+            #convert the raw lines to a Python dict 
+            ldapObject = convertLDIFFragment(lines)
+            lineCount += c
+
+            #return that object
+            yield ldapObject
+
+        #Reached the end of the input stream
+        else:
+            break
+

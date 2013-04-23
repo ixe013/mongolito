@@ -12,6 +12,20 @@ import saveInMongo
 import importExceptions
 
 
+def addArguments(parser):
+    parser.add_argument("-i",
+                      "--input", dest="inputType",
+                      choices=['ldif','mongo'],
+                      help="The source or format of record(s) to transform.")
+
+    parser.add_argument("-o",
+                      "--output", dest="outputType",
+                      choices=['ldif','mongo'],
+                      help="The destination and format of transformed record(s).")
+
+    return parser
+
+
 def ldifExtractionIterator(input_stream, lineCount=0):
     '''This generator pulls strings from the input_stream until a terminating
     blank line is found'''
@@ -33,7 +47,7 @@ def ldifExtractionIterator(input_stream, lineCount=0):
             break
 
 
-def main(args):
+def old_main(args):
     num_objects = 0
 
     output = None
@@ -57,14 +71,67 @@ def main(args):
     print >> sys.stderr, num_objects, 'objects imported.'
 
 
-if __name__ == "__main__":
+def createArgumentParser():
+    '''Default argument parsing. Allows the developper to configure the 
+    transformation engine along with their code'''
     parser = argparse.ArgumentParser()
+
+    parser = addArguments(parser)
      
     #Ask each module to add their arguments
     parser = readLDIF.addArguments(parser)
     parser = saveInMongo.addArguments(parser)
      
-    #Parse the command line
-    main(parser.parse_args())
+    return parser
 
 
+def createInputSource(args):
+    '''Creates a source object, sending the arguments object 
+    to it so that it can configure itself '''
+    inputSource = None
+
+    #Create the proper input object
+    if args.inputType == 'ldif':
+        #LDIF input, create and configure
+        inputSource = ldifInputFormat(args)
+    elif args.inputType == 'mongo':
+        #Mongodb input, create and configure
+        #TODO
+        pass
+
+    return inputSource
+
+
+def createOutputDestination(args):
+    '''Creates a destination object, sending the arguments object 
+    to it so that it can configure itself '''
+    destination = None
+
+    #Create the proper output object
+    if args.outputType == 'ldif':
+        destination = printldif.createPrintOutput(args)
+    elif args.outputType == 'mongo':
+        destination = saveInMongo.createMongoOutputFromArgs(args)    
+    
+    return destination
+
+    
+def getSourceDestination():
+    '''Returns the source and destination object as a tuple'''
+    parser = createArgumentParser()
+
+    args = parser.parse_args()
+
+    source = createInputSource(args)
+    destination= createOutputDestination(args)
+
+    return source, destination
+    
+
+def main():
+    source, destination = getSourceDestination()
+    old_main(source, destination)
+
+
+if __name__ == "__main__":
+    main()
