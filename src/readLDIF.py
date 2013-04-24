@@ -108,9 +108,10 @@ def extractLDIFFragment(inputStream, lineNumber=0):
                 lastLineWasIgnored = True
                 continue
             #or if it is a changetype directive
-            if line.lower().startswith('changetype:'):
-                lastLineWasIgnored = True
-                continue
+            #Changed my mind, let's keep it by default
+            #if line.lower().startswith('changetype:'):
+            #    lastLineWasIgnored = True
+            #    continue
                 
             #(bring 8 bit ascii values in the utf8 world)
             line = line.decode('latin_1').encode('utf-8')

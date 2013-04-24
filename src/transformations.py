@@ -1,3 +1,4 @@
+import re
 
 class RenameAttribute(object):
     '''Takes a key name and renames it, keeping values intact.

@@ -4,7 +4,7 @@ Adapted from Gist found at https://gist.github.com/bukzor/2466345
 '''
 
 class Pipeline(object):
-    def __init__(self, *functions, **kwargs):
+    def __init__(self, functions, **kwargs):
         self.functions = functions
         self.data = kwargs.get('data')
  

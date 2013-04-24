@@ -28,13 +28,13 @@ def addArguments(parser):
 
 
 
-def process(source, filtering, output):
+def process(source, filters, transformations, output):
     '''Somewhat generic loop. Could be refactored to filter, but
     that would require to keep the list in memory.'''
     num_objects = 0
 
     try:
-        for ldapObject in source.searchRecords(filtering):
+        for ldapObject in source.searchRecords(filters):
             output.write(ldapObject)
             num_objects += 1
 
@@ -45,7 +45,7 @@ def process(source, filtering, output):
     except UnicodeError as ue:
         print >> sys.stderr, ue
         
-    print >> sys.stderr, num_objects, 'objects imported.'
+    print >> sys.stderr, num_objects, 'objects processed.'
 
 
 def createArgumentParser():
@@ -112,7 +112,7 @@ def getSourceDestination():
 
 def main():
     source, destination = getSourceDestination()
-    process(source, {}, destination)
+    process(source, {}, [], destination)
 
 
 if __name__ == "__main__":

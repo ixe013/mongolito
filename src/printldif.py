@@ -1,7 +1,6 @@
 import argparse
 import base64
 import string
-import textwrap
 
 
 RFC2849_MAX_LINE = 76
@@ -18,14 +17,16 @@ def RFC2849WrappedOuput(line):
 def makePrintableAttributeAndValue(attribute, value):
     separator = ':'
 
+    value = value.encode('utf-8')
+
     #If line ends with a space, we must base64 it.
-    if value[-1:] == ' ':
+    if value.endswith(' '):
         separator = separator*2
         value = base64.b64encode(value)
 
     #Else if is has anything other than plain old ascii characters
     #(binary values like jpeg or certificates fall under this)
-    elif not all(ord(c) < ord(' ') or ord(c) > 127 or c in string.printable for c in value):
+    elif not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
         separator = separator*2
         value = base64.b64encode(value)
             
@@ -71,6 +72,12 @@ class LDIFPrinter(object):
         #Remove the attributes we already printed
         del ldapObject['dn']
         
+        try:
+            self.printAttributeAndValue(makePrintableAttributeAndValue('changetype',ldapObject['changetype']))
+            del ldapObject['changetype']
+            
+        except KeyError:
+            pass
         #Now with the object classes
         try:
             for objclass in sorted(ldapObject['objectclass']):
