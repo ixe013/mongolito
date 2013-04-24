@@ -3,7 +3,7 @@ import re
 
 class MongoReader(object):
 
-    def __init__(host, database, collection):
+    def __init__(self, host, database, collection):
         '''Creates a cursor to the supplied MongoDB database'''
         connection = pymongo.MongoClient(host)
 
@@ -15,20 +15,20 @@ class MongoReader(object):
 
     @staticmethod
     def addArguments(parser):
-        subparser = parser.add_subparsers(help='Read objects from a MongoDB database')
-        subparser.add_argument("-m",
+        group = parser.add_argument_group('Read objects from a MongoDB database')
+        group.add_argument("-m",
                           "--mongo", dest="mongoHost",
                           default='localhost',
                           help="The hostname where MongoDB resides")
          
         #Same names as mongoimport
-        subparser.add_argument("-d",
+        group.add_argument("-d",
                           "--db", dest="database",
                           default='test',
                           help="The MongoDB database to use")
          
         #Same names as mongoimport
-        subparser.add_argument("-c",
+        group.add_argument("-c",
                           "--collection", dest="collection",
                           default='mongolito',
                           help="The MongoDB collection to use")
@@ -57,6 +57,6 @@ class MongoReader(object):
         
         
         #The cursor is already iterable
-        return self.collection.find(query) 
+        return self.collection.find(query,{'_id':0}) 
 
 

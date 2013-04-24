@@ -55,14 +55,14 @@ class MongoWriter(object):
         '''Saves the ldapObject in a Mongo database
         '''
         #If there is a DN (should be, but we don't force it)
-        if 'dn' in ldapObject.keys():        
-            #Use the DN as a MongoDB object ID
-            ldapObject['_id'] = ldapObject.pop('dn').lower()
+        #we use it as a spec (criteria) key for update
      
         try:
-            self.collection.save(ldapObject)
-
+            spec = { 'dn' : ldapObject['dn'] }
+            self.collection.update(spec, ldapObject, upsert=True)
+        except KeyError:
+            raise SaveException(-1, 'dn', 'Object does not have a dn attribute')
         except bson.errors.InvalidStringData:
-            raise SaveException(-1, 'dn', ldapObject['_id'])
+            raise SaveException(-1, 'dn', ldapObject['dn'])
 
 
