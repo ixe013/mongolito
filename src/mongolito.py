@@ -6,6 +6,7 @@ import argparse
 import pymongo
 import sys
 
+import daisychain
 import readLDIF
 import readMongo
 import printldif
@@ -27,14 +28,15 @@ def addArguments(parser):
     return parser
 
 
-
 def process(source, filters, transformations, output):
     '''Somewhat generic loop. Could be refactored to filter, but
     that would require to keep the list in memory.'''
     num_objects = 0
 
+    pipeline = daisychain.Pipeline(transformations)
+
     try:
-        for ldapObject in source.searchRecords(filters):
+        for ldapObject in pipeline(source.searchRecords(filters)):
             output.write(ldapObject)
             num_objects += 1
 
@@ -45,7 +47,7 @@ def process(source, filters, transformations, output):
     except UnicodeError as ue:
         print >> sys.stderr, ue
         
-    print >> sys.stderr, num_objects, 'objects processed.'
+    return num_objects
 
 
 def createArgumentParser():
@@ -112,7 +114,8 @@ def getSourceDestination():
 
 def main():
     source, destination = getSourceDestination()
-    process(source, {}, [], destination)
+    n = process(source, {}, [], destination)
+    print >> sys.stderr, n, 'objects processed.'
 
 
 if __name__ == "__main__":

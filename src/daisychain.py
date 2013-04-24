@@ -10,7 +10,7 @@ class Pipeline(object):
  
 
     def __call__(self, data):
-        return TransformationPipeline(*self.functions, data=data)
+        return Pipeline(self.functions, data=data)
  
  
     def __iter__(self):
