@@ -47,10 +47,11 @@ class MongoReader(object):
         #Pymongo style $regex will be left alone
         pattern = re.compile('/(.*)/')
         #>>> re.sub(pattern, r"{ '$regex':'\1' }", jsre)
-        for attribute,value in filter(pattern.match, query.itervalues()):
+        for attribute,value in query.iteritems():
             try:
                 if pattern.match(value):
-                    query[attribute] = { '$regex':re.sub(pattern, r"{ '$regex':'\1' }", value) }
+                    #Convert JSON style regex to mongo $regex
+                    query[attribute] = { '$regex':re.sub(pattern, r'\1', value) }
             except TypeError:
                 #Beg for forgiveness
                 pass
