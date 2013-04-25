@@ -150,9 +150,6 @@ def convertLDIFFragment(fragment):
         #Split the attribute name from the value
         attribute, value = line.split(':',1)
         
-        #Attributes are converted to lowercase
-        attribute = attribute.lower()
-
         #Is this value base64 encoded ?
         if value[:1] == ':':
             #Decode to a UTF-8 encoded Unicode String
