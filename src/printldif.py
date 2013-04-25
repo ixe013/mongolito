@@ -23,10 +23,13 @@ def makePrintableAttributeAndValue(attribute, value):
     if value.endswith(' '):
         separator = separator*2
         value = base64.b64encode(value)
-
     #Else if is has anything other than plain old ascii characters
     #(binary values like jpeg or certificates fall under this)
     elif not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
+        separator = separator*2
+        value = base64.b64encode(value)
+    #And me make a special case with the password (obscurity)
+    elif 'userpassword' == attribute.lower():
         separator = separator*2
         value = base64.b64encode(value)
             
@@ -101,5 +104,5 @@ class LDIFPrinter(object):
                     self.printAttributeAndValue(makePrintableAttributeAndValue(name,value))
 
         #Ends with an empty line
-        print
+        print >> self.ldiffile
                 

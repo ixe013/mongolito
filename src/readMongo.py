@@ -51,7 +51,8 @@ class MongoReader(object):
             try:
                 if pattern.match(value):
                     #Convert JSON style regex to mongo $regex
-                    query[attribute] = { '$regex':re.sub(pattern, r'\1', value) }
+                    #Search is always case insensitive
+                    query[attribute] = { '$regex':re.sub(pattern, r'\1', value), '$options':'i' }
             except TypeError:
                 #Beg for forgiveness
                 pass
