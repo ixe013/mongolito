@@ -4,6 +4,7 @@ import string
 
 
 RFC2849_MAX_LINE = 76
+CHUNK_MAX_VALUES = 1337
 
 def RFC2849WrappedOuput(line):
     '''Slices the attribute-value pair (which might be base64
@@ -76,9 +77,9 @@ class LDIFPrinter(object):
         del ldapObject['dn']
         
         try:
+            #If we have a changetype, we leave it. Anything other that changetype: add
+            #will most likely produce a LDIF file that does not work.
             self.printAttributeAndValue(makePrintableAttributeAndValue('changetype',ldapObject['changetype']))
-            del ldapObject['changetype']
-            
         except KeyError:
             pass
         #Now with the object classes
@@ -86,7 +87,6 @@ class LDIFPrinter(object):
             for objclass in sorted(ldapObject['objectclass']):
                 self.printAttributeAndValue(makePrintableAttributeAndValue('objectclass',objclass))
             del ldapObject['objectclass']
-
         except KeyError:
             #object class is not mandatory
             pass
@@ -100,8 +100,16 @@ class LDIFPrinter(object):
                 self.printAttributeAndValue(makePrintableAttributeAndValue(name,ldapObject[name]))
             else:
                 #Print values prefixed with attribute name, sorted
-                for value in sorted(ldapObject[name]):
+                values = sorted(ldapObject[name])
+
+                #Only so many attributes can fit in a LDIF record
+                for value in values[:CHUNK_MAX_VALUES]:
                     self.printAttributeAndValue(makePrintableAttributeAndValue(name,value))
+                
+                if len(value) > CHUNK_MAX_VALUES:
+                    #TODO add another changetype: modify entry with the same dn
+                    #(simply wrap the above into a question)
+                    pass
 
         #Ends with an empty line
         print >> self.ldiffile
