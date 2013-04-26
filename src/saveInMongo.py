@@ -1,7 +1,20 @@
 import argparse
-import pymongo
 import bson
+import pymongo
+import string
  
+def compute_parent(dn):
+    '''Returns a string of all the components reversed.
+
+    >>> compute_parent('CN=someone,DC=example,DC=com')
+    'dc=com,dc=example,cn=someone'
+    >>> compute_parent('DC=com')
+    'dc=com'
+
+    '''
+    components = dn.split(',')
+    components.reverse()
+    return ','.join(components)
 
 class SaveException(Exception):
     def __init__(self, line, dn, message):
@@ -58,7 +71,15 @@ class MongoWriter(object):
         #we use it as a spec (criteria) key for update
      
         try:
+            #We use a specification so that multiple imports does not
+            #create multiple objects. Making the dn the _id also works
+            #but it makes everybody in the pipeline aware of the hack.
             spec = { 'dn' : ldapObject['dn'] }
+            #Insert private metadata that we will use later
+            #The mongolito.parent field allows to sort results so that
+            #parents are always created first
+            ldapObject['mongolito'] = { 'parent':compute_parent(ldapObject['dn']).lower() }
+            #Upsert the object
             self.collection.update(spec, ldapObject, upsert=True)
         except KeyError:
             raise SaveException(-1, 'dn', 'Object does not have a dn attribute')

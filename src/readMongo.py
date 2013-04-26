@@ -58,7 +58,12 @@ class MongoReader(object):
                 pass
         
         
-        #The cursor is already iterable
-        return self.collection.find(query,{'_id':0}) 
+        #Create the query
+        #Remove the MongoDB _id and all of our metadata
+        cursor = self.collection.find(query,{'_id':0, 'mongolito':0})
+        #Sort so that parent show before their childrens
+        cursor = cursor.sort('mongolito.parent', pymongo.ASCENDING)
 
+        #The cursor is already iterable
+        return cursor
 
