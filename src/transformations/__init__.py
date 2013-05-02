@@ -26,4 +26,7 @@ def add_value(original, toadd):
         
     return result
         
-
+class BaseTransformation(object):
+    def __call__(self, data):
+        for ldapobject in data:
+            yield self.transform(ldapobject)

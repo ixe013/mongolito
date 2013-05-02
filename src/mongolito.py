@@ -28,6 +28,10 @@ def addArguments(parser):
     return parser
 
 
+def update_progress(total):
+    sys.stderr.write('\r{0} objects'.format(total))
+
+
 def process(source, filters, transformations, output):
     '''Somewhat generic loop. Could be refactored to filter, but
     that would require to keep the list in memory.'''
@@ -39,6 +43,7 @@ def process(source, filters, transformations, output):
         for ldapObject in pipeline(source.searchRecords(filters)):
             output.write(ldapObject)
             num_objects += 1
+            update_progress(num_objects)
 
     #FIXME : Should make this polymorphic or better than catching Exception
     except importExceptions.LDIFParsingException as lpe:

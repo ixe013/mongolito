@@ -45,17 +45,17 @@ class ModuleTest(unittest.TestCase):
         ldapobject = {}
 
         #Add the first attribute
-        adder([ldapobject]).next()
+        adder.transform(ldapobject)
         self.assertIn('userPassword', ldapobject.keys(), 'Attribute not found in dict')
         self.assertIsInstance(ldapobject['userPassword'], str, 'Attribute should be a string')
         self.assertEquals(ldapobject['userPassword'], 'coucou', 'Attribute value was not set properly.')
         
         #Make the attribute multi valued
-        adder([ldapobject]).next()
+        adder.transform(ldapobject)
         self.assertIsInstance(ldapobject['userPassword'], list, 'Attribute should be multi-valued')
 
         #Add to a multi-value
-        adder([ldapobject]).next()
+        adder.transform(ldapobject)
         self.assertIsInstance(ldapobject['userPassword'], list, 'Attribute should be multi-valued')
         self.assertTrue(len(ldapobject['userPassword']) == 3)
 
@@ -67,7 +67,7 @@ class ModuleTest(unittest.TestCase):
 
         merger = MakeValuesUnique('objectClass')
 
-        ldapobject = merger([ldapobject]).next()
+        ldapobject = merger.transform(ldapobject)
 
         self.assertIsInstance(ldapobject['objectClass'], list, 'objectClass should still be multi valued')
         self.assertIn('top', ldapobject['objectClass'], 'objectClass top is gone')
@@ -77,13 +77,13 @@ class ModuleTest(unittest.TestCase):
 
         backup = ldapobject
 
-        merger([ldapobject]).next()
+        merger.transform(ldapobject)
         self.assertEquals(backup, ldapobject, 'merged object should not have changed')
         
 
         ldapobject['objectClass'] = [ 'top', 'top', 'top' ]
 
-        merger([ldapobject]).next()
+        merger.transform(ldapobject)
         self.assertIsInstance(ldapobject['objectClass'], str)
 
     def testCopyFirstValueOfAttribute(self):
@@ -96,20 +96,20 @@ class ModuleTest(unittest.TestCase):
         copyer = CopyFirstValueOfAttribute('single', 'copied-from-single')
 
         #Copy single to none
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
         #Copy single to single
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
         #Copy single to multi
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
 
         copyer = CopyFirstValueOfAttribute('multi', 'copied-from-multi')
 
         #Copy first value of multi to none
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
         #Copy first value of multi to single
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
         #Copy first value of multi to multi
-        copyer([ldapobject]).next()
+        copyer.transform(ldapobject)
 
         expected = {
             'dn':'cn=coucou',
@@ -137,10 +137,10 @@ class ModuleTest(unittest.TestCase):
         }
 
         remover = RemoveAttribute('single')
-        remover([ldapobject]).next()
+        remover.transform(ldapobject)
 
         remover = RemoveAttribute('multi')
-        remover([ldapobject]).next()
+        remover.transform(ldapobject)
  
         expected = {
             'dn':'cn=coucou',

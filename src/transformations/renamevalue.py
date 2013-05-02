@@ -15,25 +15,23 @@ class RenameValue(object):
         self.pattern = re.compile(pattern.strip('/'), flags=re.IGNORECASE)
         self.replacement = replacement
  
-    def __call__(self, data):
+    def transform(self, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''
-        #For each dictionary object to process
-        for ldapobject in data:
-            for attribute,value in ldapobject.iteritems():
-                if attribute == self.attribute:
-                    #If the attribute is multi-valued
-                    if isinstance(value, list): 
-                        ldapobject[attribute] = [re.sub(self.pattern, self.replacement, v) for v in value]
-                    #If the attribute is a string
-                    elif isinstance(value, basestring):
-                        ldapobject[attribute] = re.sub(self.pattern, self.replacement, value)
+        for attribute,value in ldapobject.iteritems():
+            if attribute == self.attribute:
+                #If the attribute is multi-valued
+                if isinstance(value, list): 
+                    ldapobject[attribute] = [re.sub(self.pattern, self.replacement, v) for v in value]
+                #If the attribute is a string
+                elif isinstance(value, basestring):
+                    ldapobject[attribute] = re.sub(self.pattern, self.replacement, value)
 
-                    #The attribute name is not a regex, so there can only be
-                    #one match.
-                    break
+                #The attribute name is not a regex, so there can only be
+                #one match.
+                break
 
-            #Return the object, possibly modified                
-            yield ldapobject
+        #Return the object, possibly modified                
+        return ldapobject
  

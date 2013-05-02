@@ -1,4 +1,6 @@
-class RemoveAttribute(object):
+from transformations import BaseTransformation
+
+class RemoveAttribute(BaseTransformation):
     '''Removes an attribute, regardless of value.
 
     '''
@@ -10,17 +12,10 @@ class RemoveAttribute(object):
         '''
         self.attribute = attribute
  
-    def __call__(self, data):
-        '''
-        :data a dictionary reprenting one entry
-        '''
-        #For each dictionary object to process
-        for ldapobject in data:
+    def transform(self, ldapobject):
             try:
                 del ldapobject[self.attribute]
             except KeyError:
                 pass
-
-            #Return the object, possibly modified                
-            yield ldapobject
- 
+    
+            return ldapobject

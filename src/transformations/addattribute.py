@@ -12,21 +12,19 @@ class AddAttribute(object):
         self.attribute = attribute
         self.value = value
 
-    def __call__(self, data):
+    def transform(self, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''
-        #For each dictionary object to process
-        for ldapobject in data:
-            try:
-                #Do we have a multi-value attribute ?
-                if isinstance(ldapobject[self.attribute], list):
-                    ldapobject[self.attribute].append(str(self.value))
-                #else we have a single-value that becomes multi-valued
-                else:
-                    ldapobject[self.attribute] = [ldapobject[self.attribute], str(self.value)]
-            except KeyError:
-                #We dit not have that value, add it
-                ldapobject[self.attribute] = str(self.value)
+        try:
+            #Do we have a multi-value attribute ?
+            if isinstance(ldapobject[self.attribute], list):
+                ldapobject[self.attribute].append(str(self.value))
+            #else we have a single-value that becomes multi-valued
+            else:
+                ldapobject[self.attribute] = [ldapobject[self.attribute], str(self.value)]
+        except KeyError:
+            #We dit not have that value, add it
+            ldapobject[self.attribute] = str(self.value)
 
-            yield ldapobject
+        return ldapobject
