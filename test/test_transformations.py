@@ -1,6 +1,13 @@
 import unittest
 
 import transformations
+from transformations.addattribute import AddAttribute
+from transformations.copyfirstvalue import CopyFirstValueOfAttribute
+from transformations.renameattribute import RenameAttribute
+from transformations.renamevalue import RenameValue
+from transformations.removeattribute import RemoveAttribute
+from transformations.makevalueunique import MakeValuesUnique
+from transformations.removevalue import RemoveValue
 
 class ModuleTest(unittest.TestCase):
 
@@ -28,8 +35,12 @@ class ModuleTest(unittest.TestCase):
         newval.sort()
         self.assertEquals(['a', 'b', 'c', 'd'], newval)
 
+    def testRemoveValue(self):
+        #TODO
+        pass
+
     def testAddAttribute(self):
-        adder = transformations.AddAttribute('userPassword', 'coucou')
+        adder = AddAttribute('userPassword', 'coucou')
     
         ldapobject = {}
 
@@ -54,7 +65,7 @@ class ModuleTest(unittest.TestCase):
             'objectClass': [ 'top', 'person', 'top', 'top', 'person', 'top' ]
         }
 
-        merger = transformations.MakeValuesUnique('objectClass')
+        merger = MakeValuesUnique('objectClass')
 
         ldapobject = merger([ldapobject]).next()
 
@@ -82,7 +93,7 @@ class ModuleTest(unittest.TestCase):
             'multi': ['1', '2']
         }
 
-        copyer = transformations.CopyFirstValueOfAttribute('single', 'copied-from-single')
+        copyer = CopyFirstValueOfAttribute('single', 'copied-from-single')
 
         #Copy single to none
         copyer([ldapobject]).next()
@@ -91,7 +102,7 @@ class ModuleTest(unittest.TestCase):
         #Copy single to multi
         copyer([ldapobject]).next()
 
-        copyer = transformations.CopyFirstValueOfAttribute('multi', 'copied-from-multi')
+        copyer = CopyFirstValueOfAttribute('multi', 'copied-from-multi')
 
         #Copy first value of multi to none
         copyer([ldapobject]).next()
@@ -110,6 +121,14 @@ class ModuleTest(unittest.TestCase):
 
         self.assertEqual(ldapobject, expected)
 
+    def testRenameValue(self):
+        #TODO
+        pass
+
+    def testRenameAttribute(self):
+        #TODO
+        pass
+
     def testRemoveAttribute(self):
         ldapobject = {
             'dn':'cn=coucou',
@@ -117,10 +136,10 @@ class ModuleTest(unittest.TestCase):
             'multi': ['1', '2']
         }
 
-        remover = transformations.RemoveAttribute('single')
+        remover = RemoveAttribute('single')
         remover([ldapobject]).next()
 
-        remover = transformations.RemoveAttribute('multi')
+        remover = RemoveAttribute('multi')
         remover([ldapobject]).next()
  
         expected = {

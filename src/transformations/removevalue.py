@@ -1,0 +1,53 @@
+class RemoveValue(object):
+    '''Removes a value from an attribute, possibly deleting it.
+
+    If the value is the last one for the attribute, the attribute 
+    is deleted. When removing from a list, if there is a single attribute 
+    left after the operation, it keeps only the object, (value = value[0])
+
+    '''
+    def __init__(self, attribute, value):
+        '''
+        >>>remover = RemoveValue('objectClass', 'irrelevant')
+
+        :attribute the name of the attribute from which a value must be removed
+        :value the value to be removed. Can be a regular expression enclosed in //
+        '''
+        self.attribute = attribute
+        self.pattern = re.compile(value.strip('/'), flags=re.IGNORECASE)
+ 
+    def __call__(self, data):
+        '''
+        :data a dictionary reprenting one entry
+        '''
+        #For each dictionary object to process
+        for ldapobject in data:
+            #For each key value pair in the orginal dict
+            for attribute,value in ldapobject.iteritems():
+                if attribute == self.attribute:
+                    #If the attribute is multi-valued
+                    if isinstance(value, list): 
+                        #Remove the value
+                        new_value = filter(lambda v: not self.pattern.match(v), value)
+                        #Make a single item list into that item
+                        if len(new_value)==1:
+                            ldapobject[attribute] = new_value[0]
+                        #Delete the attribute if it was the last item
+                        elif len(new_value)==0:
+                            del ldapobject[attribute]
+                        #Or save the remaining items from the list
+                        else:
+                            ldapobject[attribute] = new_value
+
+                    #If the attribute is a string
+                    elif isinstance(value, basestring):
+                        if self.pattern.match(value):
+                            del ldapobject[attribute]
+
+                    #The attribute name is not a regex, so there can only be
+                    #one match.
+                    break
+
+            #Return the object, possibly modified                
+            yield ldapobject
+ 
