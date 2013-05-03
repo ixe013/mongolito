@@ -1,6 +1,7 @@
 from transformations import add_value
+from transformations import BaseTransformation
 
-class CopyFirstValueOfAttribute(object):
+class CopyFirstValueOfAttribute(BaseTransformation):
     def __init__(self, fromattr, toattr):
         self.fromattr = fromattr
         self.toattr = toattr

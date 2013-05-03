@@ -1,4 +1,8 @@
-class RemoveValue(object):
+import re
+
+from transformations import BaseTransformation
+
+class RemoveValue(BaseTransformation):
     '''Removes a value from an attribute, possibly deleting it.
 
     If the value is the last one for the attribute, the attribute 

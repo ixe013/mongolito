@@ -52,6 +52,9 @@ def process(source, filters, transformations, output):
     except UnicodeError as ue:
         print >> sys.stderr, ue
         
+    if num_objects > 0:
+        print >> sys.stderr, ' -- done'
+
     return num_objects
 
 
@@ -120,7 +123,6 @@ def getSourceDestination():
 def main():
     source, destination = getSourceDestination()
     n = process(source, {}, [], destination)
-    print >> sys.stderr, n, 'objects processed.'
 
 
 if __name__ == "__main__":

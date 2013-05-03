@@ -1,4 +1,8 @@
-class RenameAttribute(object):
+import re
+
+from transformations import BaseTransformation
+
+class RenameAttribute(BaseTransformation):
     '''Takes a key name and renames it, keeping values intact.
 
     Uses Python's re.sub(), so fancy renames with expression

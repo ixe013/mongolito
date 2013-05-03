@@ -1,4 +1,6 @@
-class AddAttribute(object):
+from transformations import BaseTransformation
+
+class AddAttribute(BaseTransformation):
     '''Adds an attribute to an object.
 
     If the value is already present, it is added and the value

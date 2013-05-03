@@ -3,18 +3,7 @@ import bson
 import pymongo
 import string
  
-def compute_parent(dn):
-    '''Returns a string of all the components reversed.
-
-    >>> compute_parent('CN=someone,DC=example,DC=com')
-    'dc=com,dc=example,cn=someone'
-    >>> compute_parent('DC=com')
-    'dc=com'
-
-    '''
-    components = dn.split(',')
-    components.reverse()
-    return ','.join(components)
+import utils
 
 class SaveException(Exception):
     def __init__(self, line, dn, message):
@@ -78,7 +67,9 @@ class MongoWriter(object):
             #Insert private metadata that we will use later
             #The mongolito.parent field allows to sort results so that
             #parents are always created first
-            ldapObject['mongolito'] = { 'parent':compute_parent(ldapObject['dn']).lower() }
+            ldapObject['mongolito'] = { 'parent':utils.compute_parent(ldapObject['dn']) ,
+                                        'path':utils.compute_path(ldapObject['dn']) ,
+                                      }
             #Upsert the object
             self.collection.update(spec, ldapObject, upsert=True)
         except KeyError:

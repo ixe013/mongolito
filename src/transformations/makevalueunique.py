@@ -1,4 +1,6 @@
-class MakeValuesUnique(object):
+from transformations import BaseTransformation
+
+class MakeValuesUnique(BaseTransformation):
     def __init__(self, attribute):
         self.attribute = attribute
 

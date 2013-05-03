@@ -38,27 +38,35 @@ def makePrintableAttributeAndValue(attribute, value):
 
         
 class LDIFPrinter(object):
-    def __init__(self, ldiffile):
+    def __init__(self, ldiffile, overwrite):
         self.ldiffile = ldiffile
+
+        if overwrite:
+            self.ldiffile.truncate(0)
+        
         
     @staticmethod
     def addArguments(parser):
         group = parser.add_argument_group('Writes objects in LDIF format')
         group.add_argument("-l",
                           "--ldif", dest="ldiffile",
-                          type=argparse.FileType('w'),
-                          help="The LDIF file to write. Use - for stdout")
+                          type=argparse.FileType('a'),
+                          help="The LDIF file to write to (append mode, unless --overwrite is specified). Use - for stdout")
+
+        group.add_argument("-w",
+                          "--overwrite", dest="overwrite",
+                          action='store_true',
+                          help="Will overwrite the destination if it exists")
 
         return parser
 
     @staticmethod
     def create(args):
-        return LDIFPrinter(args.ldiffile)
+        return LDIFPrinter(args.ldiffile, args.overwrite)
 
 
     def printAttributeAndValue(self, printable):
         print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(printable))
-
 
     def write(self, ldapObject):
         '''Prints a Python dict that represents a ldap object in a sorted matter
@@ -80,6 +88,7 @@ class LDIFPrinter(object):
             #If we have a changetype, we leave it. Anything other that changetype: add
             #will most likely produce a LDIF file that does not work.
             self.printAttributeAndValue(makePrintableAttributeAndValue('changetype',ldapObject['changetype']))
+            del ldapObject['changetype']
         except KeyError:
             pass
         #Now with the object classes

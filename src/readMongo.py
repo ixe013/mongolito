@@ -40,25 +40,42 @@ class MongoReader(object):
     def create(args):
         return MongoReader(args.mongoHost, args.database, args.collection)
 
+    def convert_embeeded_regex(self, query):
+        '''Convert JSON style regex to mongo $regex. If a value is
+        a dict, this method calls itself with it.
+
+        Search is always case insensitive.
+
+        '''
+        pattern = re.compile('/(.*)/(i)?')
+
+        for attribute,value in query.iteritems():
+            try:
+                match = pattern.match(value)
+                if match:
+                    #Convert JSON style regex to mongo $regex
+                    #Search is always case insensitive
+                    query[attribute] = { '$regex':re.sub(pattern, r'\1', value) }
+
+                    #Add the case insensitive option if it was specified
+                    if not match.group(2) is None:
+                        #If we get here, we know that query[attribute] is
+                        #a dict with one key, '$regex'.
+                        query[attribute]['$options'] = 'i'
+
+            except TypeError:
+                if isinstance(value, list):
+                    query[attribute] = [self.convert_embeeded_regex(rule) for rule in value]
+
+        return query
+        
 
     def searchRecords(self, query = {}):
         '''Thin wrapper over pymongo.collection.find'''
-        #Convert javascript style regular expressions to $regex format.
-        #Pymongo style $regex will be left alone
-        pattern = re.compile('/(.*)/')
-        #>>> re.sub(pattern, r"{ '$regex':'\1' }", jsre)
-        for attribute,value in query.iteritems():
-            try:
-                if pattern.match(value):
-                    #Convert JSON style regex to mongo $regex
-                    #Search is always case insensitive
-                    query[attribute] = { '$regex':re.sub(pattern, r'\1', value), '$options':'i' }
-            except TypeError:
-                #Beg for forgiveness
-                pass
+
+        #Create the query from the syntaxic sugar
+        query = self.convert_embeeded_regex(query)
         
-        
-        #Create the query
         #Remove the MongoDB _id and all of our metadata
         cursor = self.collection.find(query,{'_id':0, 'mongolito':0})
         #Sort so that parent show before their childrens

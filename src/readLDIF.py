@@ -107,17 +107,21 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             if filter(line.lower().startswith, leadingAttributesToIgnore) and len(lines) == 0:
                 lastLineWasIgnored = True
                 continue
-            #or if it is a changetype directive
-            #Changed my mind, let's keep it by default
-            #if line.lower().startswith('changetype:'):
-            #    lastLineWasIgnored = True
-            #    continue
                 
+            #When we get here, we knwo it is a new 
+            #attribute: value pair, save it.
+
             #(bring 8 bit ascii values in the utf8 world)
             line = line.decode('latin_1').encode('utf-8')
-            #It is a new attribute:value pair, save it
             lines.append( line.strip() )
-            
+
+            #There is a special case where the attribute 
+            #is on the next line, like this
+            #attribute:
+            # value
+            if lines[len(lines)-1].endswith(':'):
+                #We add the space ourselves
+                lines.append(lines.pop()+' ')
 
         #If the last line was a comment...
         elif lastLineWasIgnored:

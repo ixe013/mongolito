@@ -20,27 +20,28 @@ class MyTest(unittest.TestCase):
            ' multi-line comment\n',
            ' with a lot of lines\n',
            'First line: asdf\n',
-           'changeType: 0\n',
+           'changetype: add\n',
            '#Comment\n',
            'objectClass: top\n',
            'cn: Hello,\n',
            ' World\n',
            ' !\n',
-           'version: 1,\n',
+           'version: 1\n',
            'description:: R2VzdGlvbiBkZXMgZG9tYWluZXMgZ\n',
            ' GUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVucyBwYXM\n',
            ' gZGUgYmFzZXMgZGUgZG9ubsOpZXMu\n',
            'result: 0\n',
            'continue:\n',
-           ' OnNextLine:\n',
+           ' OnNextLine\n',
            '#Trailing comments are ignored, not forwarded\n',
            '\n',
            'Remaining lines are left untouched\n',
            '\n',
         ]
 
-        expectedLines = [
+        expected_lines = [
            'First line: asdf',
+           'changetype: add',
            'objectClass: top',
            'cn: Hello,World!',
            'version: 1',
@@ -49,10 +50,9 @@ class MyTest(unittest.TestCase):
            'continue: OnNextLine',
         ]
         
-        #linecount, readLines = readLDIF.extractLDIFFragment(rawLines)
+        linecount, read_lines = readLDIF.extractLDIFFragment(rawLines)
 
-        #self.assertEqual(len(rawLines)-2, linecount, 'Line count does not match.')
-        #self.assertEqual(len(expectedLines), len(readLines), 'Missing or extra lines.')
+        self.assertEqual(expected_lines, read_lines)
 
 
     def testErrorReportingForFragments(self):

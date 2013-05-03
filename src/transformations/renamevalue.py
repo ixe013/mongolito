@@ -1,4 +1,8 @@
-class RenameValue(object):
+import re
+
+from transformations import BaseTransformation
+
+class RenameValue(BaseTransformation):
     '''Renames a value with a regular expression pattern.
 
     Each value in multi-valued attributes are tested for 
