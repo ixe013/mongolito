@@ -2,6 +2,7 @@ import unittest
 
 import transformations
 from transformations.addattribute import AddAttribute
+from transformations.copyattribute import CopyAttribute
 from transformations.copyfirstvalue import CopyFirstValueOfAttribute
 from transformations.renameattribute import RenameAttribute
 from transformations.renamevalue import RenameValue
@@ -121,9 +122,60 @@ class ModuleTest(unittest.TestCase):
 
         self.assertEqual(ldapobject, expected)
 
+    def testCopyAttribute(self):
+        ldapobject = {
+            'dn':'cn=coucou',
+            'single': 'aaa',
+            'multi': ['111','222','333'],
+        }
+
+        copier = CopyAttribute('single','single-copy')
+        copier.transform(ldapobject)
+
+        copier = CopyAttribute('multi','multi-copy')
+        copier.transform(ldapobject)
+
+        expected = {
+            'dn':'cn=coucou',
+            'single': 'aaa',
+            'multi': ['111','222','333'],
+            'single-copy':'aaa',
+            'multi-copy': ['111','222','333'],
+        }
+
+        self.assertEqual(ldapobject,expected)
+
     def testRenameValue(self):
-        #TODO
-        pass
+        ldapobject = {
+            'dn':'ou=people,ou=example,ou=com',
+            'ou':'people',
+            'single':'abracadabra',
+            'multi':['abracadabra', 'apple', 'cat'],
+            'untouched':'blah'
+        }
+        
+        #Changing the DN propagates to the attribute that design the
+        #first component
+        renamer = RenameValue('dn', 'ou=people,ou=example,ou=com', r'ou=aliens,ou=example,ou=com')
+        renamer.transform(ldapobject)
+
+        #Regular expression on a single value  a --> 4
+        renamer = RenameValue('single', '/[a]/', '4')
+        renamer.transform(ldapobject)
+
+        #Regular expression on a multi value  a --> 4
+        renamer = RenameValue('multi', '/[a]/', '4')
+        renamer.transform(ldapobject)
+
+        expected = {
+            'dn':'ou=aliens,ou=example,ou=com',
+            'ou':'aliens',
+            'single':'4br4c4d4br4',
+            'multi':['4br4c4d4br4', '4pple', 'c4t'],
+            'untouched':'blah'
+        }
+
+        self.assertEqual(expected, ldapobject)
 
     def testRenameAttribute(self):
         #TODO
