@@ -122,7 +122,7 @@ def getSourceDestination():
 
 def main():
     source, destination = getSourceDestination()
-    n = process(source, {}, [], destination)
+    process(source, {}, [], destination)
 
 
 if __name__ == "__main__":
