@@ -53,8 +53,8 @@ class MongoWriter(object):
         return parser
 
  
-    def write(self, ldapObject):
-        '''Saves the ldapObject in a Mongo database
+    def write(self, ldapobject):
+        '''Saves the ldapobject in a Mongo database
         '''
         #If there is a DN (should be, but we don't force it)
         #we use it as a spec (criteria) key for update
@@ -63,18 +63,23 @@ class MongoWriter(object):
             #We use a specification so that multiple imports does not
             #create multiple objects. Making the dn the _id also works
             #but it makes everybody in the pipeline aware of the hack.
-            spec = { 'dn' : ldapObject['dn'] }
+            spec = { 'dn' : ldapobject['dn'] }
             #Insert private metadata that we will use later
             #The mongolito.parent field allows to sort results so that
             #parents are always created first
-            ldapObject['mongolito'] = { 'parent':utils.compute_parent(ldapObject['dn']) ,
-                                        'path':utils.compute_path(ldapObject['dn']) ,
+            ldapobject['mongolito'] = { 'parent':utils.compute_parent(ldapobject['dn']) ,
+                                        'path':utils.compute_path(ldapobject['dn']) ,
                                       }
+
+            #I though there would be an implict conversion to dict, but
+            #there is not. Let's make one.
+            ldapobject = dict(zip(ldapobject.keys(), ldapobject.values()))
+
             #Upsert the object
-            self.collection.update(spec, ldapObject, upsert=True)
+            self.collection.update(spec, ldapobject, upsert=True)
         except KeyError:
             raise SaveException(-1, 'dn', 'Object does not have a dn attribute')
         except bson.errors.InvalidStringData:
-            raise SaveException(-1, 'dn', ldapObject['dn'])
+            raise SaveException(-1, 'dn', ldapobject['dn'])
 
 

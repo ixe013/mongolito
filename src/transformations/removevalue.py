@@ -3,7 +3,7 @@ import re
 from transformations import BaseTransformation
 
 class RemoveValue(BaseTransformation):
-    '''Removes a value from an attribute, possibly deleting it.
+    '''Removes a value from an attribute, deleting it when the last value is removed.
 
     If the value is the last one for the attribute, the attribute 
     is deleted. When removing from a list, if there is a single attribute 
@@ -18,7 +18,7 @@ class RemoveValue(BaseTransformation):
         :value the value to be removed. Can be a regular expression enclosed in //
         '''
         self.attribute = attribute
-        self.pattern = re.compile(value.strip('/'), flags=re.IGNORECASE)
+        self.pattern = re.compile(value.strip('/').rstrip('/i'), flags=re.IGNORECASE)
  
     def transform(self, ldapobject):
         '''
@@ -31,7 +31,7 @@ class RemoveValue(BaseTransformation):
                 #If the attribute is multi-valued
                 if isinstance(value, list): 
                     #Remove the value
-                    new_value = filter(lambda v: not self.pattern.match(v), value)
+                    new_value = filter(lambda v: not self.pattern.search(v), value)
                     #Make a single item list into that item
                     if len(new_value)==1:
                         ldapobject[attribute] = new_value[0]
@@ -44,7 +44,7 @@ class RemoveValue(BaseTransformation):
 
                 #If the attribute is a string
                 elif isinstance(value, basestring):
-                    if self.pattern.match(value):
+                    if self.pattern.search(value):
                         del ldapobject[attribute]
 
                 #The attribute name is not a regex, so there can only be

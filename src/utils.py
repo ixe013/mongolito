@@ -90,21 +90,3 @@ def compute_parent(dn):
     #itself (which is now last in the list)
     return ','.join(components[:-1]).lower()
 
-def get_insensitive_key(d, key):
-    '''Returns the key that is in the dict, ignoring
-    case. Returns a KeyError if the key is not found.'''
-    key = key.lower()
-    
-    result = None
-
-    for k in d:
-        if k.lower() == key:
-            result = k
-            break
-
-    return result
-
-
-def get_insensitive_value(d, key):
-    return d[get_insensitive_key(d, key)]
-

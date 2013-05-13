@@ -39,26 +39,5 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual('dc=com,dc=example', utils.compute_parent('CN=someone,DC=example,DC=com'))
         self.assertEqual('', utils.compute_parent('DC=com'))
 
-    def testCaseInsensitiveKey(self):
-        somedict = {'xyz': 2, 'wMa': 8, 'Pma': 9} #Found on S.O. look it up for more info
-
-        #Get a key from a wrong cased key
-        self.assertEqual('xyz', utils.get_insensitive_key(somedict, 'XYZ'))
-    
-        #Get None when looking for an inexisting key
-        self.assertEqual(None, utils.get_insensitive_key(somedict, 'asdf'))
-    
-        #Get the right value looking for an wrong cased key
-        self.assertEqual(2, utils.get_insensitive_value(somedict, 'XYZ'))
-
-        #Raise on missing key
-        with self.assertRaises(KeyError):
-            utils.get_insensitive_value(somedict, 'asdf')
-        
-        #Same test, wrapped in a dict
-        with self.assertRaises(KeyError):
-            somedict[utils.get_insensitive_key(somedict, 'asdf')]
-        
-
 if __name__ == "__main__":
     unittest.main()

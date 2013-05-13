@@ -6,6 +6,7 @@ import argparse
 import pymongo
 import sys
 
+import insensitivedict
 import daisychain
 import readLDIF
 import readMongo
@@ -41,7 +42,7 @@ def process(source, filters, transformations, output):
 
     try:
         for ldapObject in pipeline(source.searchRecords(filters)):
-            output.write(ldapObject)
+            output.write(insensitivedict.InsensitiveDict(ldapObject))
             num_objects += 1
             update_progress(num_objects)
 

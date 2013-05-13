@@ -4,6 +4,7 @@ import transformations
 from transformations.addattribute import AddAttribute
 from transformations.copyattribute import CopyAttribute
 from transformations.copyfirstvalue import CopyFirstValueOfAttribute
+from transformations.join import JoinMultiValueAttribute
 from transformations.renameattribute import RenameAttribute
 from transformations.renamevalue import RenameValue
 from transformations.removeattribute import RemoveAttribute
@@ -37,8 +38,36 @@ class ModuleTest(unittest.TestCase):
         self.assertEquals(['a', 'b', 'c', 'd'], newval)
 
     def testRemoveValue(self):
-        #TODO
-        pass
+        ldapobject = {
+            'single':'Hello',
+            'cute':'Cat',
+            'scary':['croCodile','Cobra'],
+            'multi':['aaa','CCC','abracadabra'],
+        }
+
+        #No match
+        remover = RemoveValue('single', '/c/')
+        remover.transform(ldapobject)
+
+        #Match, remove attribute
+        remover = RemoveValue('cute', '/c/')
+        remover.transform(ldapobject)
+
+        #Match on multiple, ends up removing the attribute
+        remover = RemoveValue('scary', '/c/')
+        remover.transform(ldapobject)
+
+        #Match on some attribute, leaves a single valued attribute
+        remover = RemoveValue('multi', '/c/')
+        remover.transform(ldapobject)
+
+        expected = {
+            'single':'Hello',
+            'multi':'aaa',
+        }
+
+        self.assertEquals(ldapobject, expected)
+
 
     def testAddAttribute(self):
         adder = AddAttribute('userPassword', 'coucou')
@@ -199,6 +228,21 @@ class ModuleTest(unittest.TestCase):
         }
 
         self.assertEqual(ldapobject, expected)
+
+    def testJoinMultiValueAttribute(self):
+        ldapobject = {
+            'multi': ['1', '2', '3']
+        }
+
+        joiner = JoinMultiValueAttribute('multi',' - ', 'flat')
+        joiner.transform(ldapobject)
+
+        expected = {
+            'multi': ['1', '2', '3'],
+            'flat': '1 - 2 - 3'
+        }
+
+        self.assertEquals(ldapobject, expected)
 
 
 if __name__ == "__main__":
