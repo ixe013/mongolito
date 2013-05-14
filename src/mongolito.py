@@ -33,18 +33,22 @@ def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
 
 
-def process(source, filters, transformations, output):
+def process(source, filters, transformations, output, progress=update_progress):
     '''Somewhat generic loop. Could be refactored to filter, but
     that would require to keep the list in memory.'''
     num_objects = 0
 
     pipeline = daisychain.Pipeline(transformations)
 
+    #Eat progress if none is required
+    if progress is None:
+        progress = lambda x: None
+
     try:
-        for ldapObject in pipeline(source.searchRecords(filters)):
+        for ldapObject in pipeline(source.search(filters)):
             output.write(insensitivedict.InsensitiveDict(ldapObject))
             num_objects += 1
-            update_progress(num_objects)
+            progress(num_objects)
 
     #FIXME : Should make this polymorphic or better than catching Exception
     except importExceptions.LDIFParsingException as lpe:

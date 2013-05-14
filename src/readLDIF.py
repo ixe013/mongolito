@@ -42,7 +42,7 @@ class LDIFReader(object):
     def create(args):
         return LDIFReader(args.ldiffile)
 
-    def searchRecords(self, query = {}):
+    def search(self, query = {}):
         #The line count is there just to put in the Exception record if something
         #goes wrong.
         lineCount = 0

@@ -69,8 +69,16 @@ class MongoReader(object):
 
         return query
         
+    def get_attribute(self, query={}, attribute = 'dn', error=KeyError):
+        '''Returns an iterator over a single attribute from a search'''
+        for ldapobject in self.search(query):
+            try:
+                yield ldapobject[attribute]
+            except KeyError as ke:
+                if not error is None:
+                    raise ke
 
-    def searchRecords(self, query = {}):
+    def search(self, query = {}):
         '''Thin wrapper over pymongo.collection.find'''
 
         #Create the query from the syntaxic sugar

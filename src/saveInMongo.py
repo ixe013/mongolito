@@ -71,6 +71,15 @@ class MongoWriter(object):
                                         'path':utils.compute_path(ldapobject['dn']) ,
                                       }
 
+            #Best effort guess to choose a rdn : first of cn or uid
+            try:
+                ldapobject['mongolito']['rdn'] = ldapobject['cn'].lower()
+            except KeyError:
+                try:
+                    ldapobject['mongolito']['rdn'] = ldapobject['uid'].lower()
+                except KeyError:
+                    pass
+
             #I though there would be an implict conversion to dict, but
             #there is not. Let's make one.
             ldapobject = dict(zip(ldapobject.keys(), ldapobject.values()))

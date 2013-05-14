@@ -39,5 +39,24 @@ class ModuleTest(unittest.TestCase):
         self.assertEqual('dc=com,dc=example', utils.compute_parent('CN=someone,DC=example,DC=com'))
         self.assertEqual('', utils.compute_parent('DC=com'))
 
+    def testConvertRegex(self):
+        pattern1 = '/hello$/'
+        pattern2 = '/^world/i'
+        pattern3 = 'meow'
+
+        #Case insentive by default
+        regex1 = { '$regex':'hello$', '$options':'i' }
+        self.assertEquals(regex1, utils.regex_from_javascript(pattern1))
+
+        #insensitive flag wins, trailing i is ignored
+        regex2 = { '$regex':'^world' }
+        self.assertEquals(regex2, utils.regex_from_javascript(pattern2, False))
+
+        #a string defaults to a case insensitive pattern
+        regex3 = { '$regex':'meow', '$options':'i' }
+        self.assertEquals(regex3, utils.regex_from_javascript(pattern3))
+
+        
+
 if __name__ == "__main__":
     unittest.main()

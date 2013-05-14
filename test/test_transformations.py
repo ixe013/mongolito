@@ -8,7 +8,7 @@ from transformations.join import JoinMultiValueAttribute
 from transformations.renameattribute import RenameAttribute
 from transformations.renamevalue import RenameValue
 from transformations.removeattribute import RemoveAttribute
-from transformations.makevalueunique import MakeValuesUnique
+from transformations.makevaluesunique import MakeValuesUnique
 from transformations.removevalue import RemoveValue
 
 class ModuleTest(unittest.TestCase):

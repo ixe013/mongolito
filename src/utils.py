@@ -90,3 +90,36 @@ def compute_parent(dn):
     #itself (which is now last in the list)
     return ','.join(components[:-1]).lower()
 
+def regex_from_javascript(pattern, insensitive=True):
+    '''Converts a javascript style regular expression to a 
+    mongo regular expression suitable for in place replacement.
+
+    Defaults to case insensitive. The trailing i is ignored, use
+    the insensitive parameter.
+
+    '''
+    regex = {}
+    regex['$regex'] = pattern_from_javascript(pattern)
+
+    if insensitive:
+        regex['$options'] = 'i'
+    
+    return regex
+
+def pattern_from_javascript(pattern):
+    '''Converts a javascript style regular expression to a 
+    mongo regular expression suitable for in place replacement.
+
+    Defaults to case insensitive. The trailing i is ignored, use
+    the insensitive parameter.
+
+    '''
+    
+    if pattern.startswith('/'): 
+        if pattern.endswith('/'):
+            pattern = pattern[1:-1]
+        elif pattern.endswith('/i'):
+            pattern = pattern[1:-2]
+
+    return pattern
+    
