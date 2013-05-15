@@ -38,6 +38,13 @@ class ValuesFromQuery(BaseTransformation):
         return query
         
     def execute_query(self, attribute):
+        '''Runs the sub query.
+        Running the sub query means that :
+        1. We see if the attribute's value matches a pattern we have to lookup 
+        2. From the previous match, we have a bunch of groups.
+        3. Replace each placeholder with the corresponding group
+        4. call get_attribute (which is a search that returns an array)
+        '''
         results = []
         #Try the pattern
         match = self.pattern.search(attribute)
@@ -57,13 +64,14 @@ class ValuesFromQuery(BaseTransformation):
         '''
         try:
             results = []
-            #TODO single valued attribute
-            if isinstance(ldapobject[self.attribute], basestring):
-                results = self.execute_query(ldapobject[self.attribute])
+            
+            value = ldapobject[self.attribute]
+            if isinstance(value, basestring):
+                results = self.execute_query(value)
             else:
                 #For each value of the attribute we want to replace
-                for value in ldapobject[self.attribute]:
-                    results.extend(self.execute_query(value))
+                for v in value:
+                    results.extend(self.execute_query(v))
 
             if not results:
                 #We delete the attribute if it is empty

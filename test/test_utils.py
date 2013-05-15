@@ -56,7 +56,26 @@ class ModuleTest(unittest.TestCase):
         regex3 = { '$regex':'meow', '$options':'i' }
         self.assertEquals(regex3, utils.regex_from_javascript(pattern3))
 
-        
+    def testGetNestedAttribute(self):
+        ldapobject = {
+            'regular':1,
+            'a':{'nested':{'key':3}},
+        }
+
+        #Defaults to regular dict 
+        self.assertEquals(ldapobject['regular'], utils.get_nested_attribute(ldapobject, 'regular'))
+
+        #Key error on missing regular key
+        with self.assertRaises(KeyError):
+            utils.get_nested_attribute(ldapobject, 'asdf')
+
+        #Nested key
+        self.assertEquals(ldapobject['a']['nested']['key'], utils.get_nested_attribute(ldapobject, 'a.nested.key'))
+
+        #Key error on missing nested key
+        with self.assertRaises(KeyError):
+            utils.get_nested_attribute(ldapobject, 'a.s.d.f')
+
 
 if __name__ == "__main__":
     unittest.main()

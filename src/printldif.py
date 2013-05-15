@@ -65,10 +65,13 @@ class LDIFPrinter(object):
         return LDIFPrinter(args.ldiffile, args.overwrite)
 
 
+    def comment(self, text):
+        print >> self.ldiffile, '#', text
+
     def printAttributeAndValue(self, printable):
         print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(printable))
 
-    def write(self, ldapObject):
+    def write(self, ldapobject):
         '''Prints a Python dict that represents a ldap object in a sorted matter
              dn is printed first
              objectclass is printed after, sorted
@@ -78,48 +81,72 @@ class LDIFPrinter(object):
            method'''
 
         #dn is always first
-        #print 'dn:', ldapObject['dn']
-        self.printAttributeAndValue(makePrintableAttributeAndValue('dn',ldapObject['dn']))
+        #print 'dn:', ldapobject['dn']
+        dn = ldapobject['dn'] 
+        self.printAttributeAndValue(makePrintableAttributeAndValue('dn',dn))
 
         #Remove the attributes we already printed
-        del ldapObject['dn']
+        del ldapobject['dn']
         
-        try:
-            #If we have a changetype, we leave it. Anything other that changetype: add
-            #will most likely produce a LDIF file that does not work.
-            self.printAttributeAndValue(makePrintableAttributeAndValue('changetype',ldapObject['changetype']))
-            del ldapObject['changetype']
-        except KeyError:
-            pass
+        #This a changetype add, we add it
+        self.printAttributeAndValue(makePrintableAttributeAndValue('changetype','add'))
+
         #Now with the object classes
         try:
-            for objclass in sorted(ldapObject['objectclass']):
+            for objclass in sorted(ldapobject['objectclass']):
                 self.printAttributeAndValue(makePrintableAttributeAndValue('objectclass',objclass))
-            del ldapObject['objectclass']
+            del ldapobject['objectclass']
         except KeyError:
             #object class is not mandatory
             pass
 
+        large_attributes = []
+
         #This loops prints what is left
-        for name in sorted(ldapObject.keys()):
+        for name in sorted(ldapobject.keys()):
             #Must check type instead of begging for forgiveness
             #because string is iterable but will not produce the
             #output we are looking for
-            if isinstance(ldapObject[name], basestring):
-                self.printAttributeAndValue(makePrintableAttributeAndValue(name,ldapObject[name]))
+            if isinstance(ldapobject[name], basestring):
+                self.printAttributeAndValue(makePrintableAttributeAndValue(name,ldapobject[name]))
             else:
                 #Print values prefixed with attribute name, sorted
-                values = sorted(ldapObject[name])
+                values = sorted(ldapobject[name])
 
+                if len(values) > CHUNK_MAX_VALUES:
+                    #TODO add another changetype: modify entry with the same dn
+                    #(simply wrap the above into a question)
+                    self.comment('Warning : there are {0} values for attribute name "{1}".'.format(len(values), name))
+                    #Save the attribute for later (but we could just run the list again)
+                    large_attributes.append(name)
+                
                 #Only so many attributes can fit in a LDIF record
+                #TODO Put back the test of chunked values
                 for value in values[:CHUNK_MAX_VALUES]:
                     self.printAttributeAndValue(makePrintableAttributeAndValue(name,value))
                 
-                if len(value) > CHUNK_MAX_VALUES:
-                    #TODO add another changetype: modify entry with the same dn
-                    #(simply wrap the above into a question)
-                    pass
-
         #Ends with an empty line
         print >> self.ldiffile
+
+        #For each attribute that had too many values
+        for large_attribute in large_attributes:
+            #Starting with the last entry we left out
+            next_chunk = CHUNK_MAX_VALUES
+
+            while ldapobject[large_attribute][next_chunk:next_chunk+CHUNK_MAX_VALUES]:
+                #Output a changetype modify header
+                self.printAttributeAndValue(makePrintableAttributeAndValue('dn',dn))
+                self.printAttributeAndValue(makePrintableAttributeAndValue('changetype','modify'))
+                self.printAttributeAndValue(makePrintableAttributeAndValue('add',large_attribute))
+
+                #For each remaining value (which can also be chunked)
+                for value in values[next_chunk:next_chunk+CHUNK_MAX_VALUES]:
+                    self.printAttributeAndValue(makePrintableAttributeAndValue(large_attribute, value))
+
+                #Ends with a separator
+                print >> self.ldiffile, '-'
+                #followed by an empty line
+                print >> self.ldiffile
+                
+                next_chunk = next_chunk + CHUNK_MAX_VALUES
                 

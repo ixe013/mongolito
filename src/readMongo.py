@@ -40,7 +40,8 @@ class MongoReader(object):
     def create(args):
         return MongoReader(args.mongoHost, args.database, args.collection)
 
-    def convert_embeeded_regex(self, query):
+    @staticmethod
+    def convert_embeeded_regex(query):
         '''Convert JSON style regex to mongo $regex. If a value is
         a dict, this method calls itself with it.
 
@@ -65,7 +66,7 @@ class MongoReader(object):
 
             except TypeError:
                 if isinstance(value, list):
-                    query[attribute] = [self.convert_embeeded_regex(rule) for rule in value]
+                    query[attribute] = [MongoReader.convert_embeeded_regex(rule) for rule in value]
 
         return query
         
@@ -82,10 +83,10 @@ class MongoReader(object):
         '''Thin wrapper over pymongo.collection.find'''
 
         #Create the query from the syntaxic sugar
-        query = self.convert_embeeded_regex(query)
+        query = MongoReader.convert_embeeded_regex(query)
         
         #Remove the MongoDB _id and all of our metadata
-        cursor = self.collection.find(query,{'_id':0, 'mongolito':0})
+        cursor = self.collection.find(query, {'_id':0 })
         #Sort so that parent show before their childrens
         cursor = cursor.sort('mongolito.parent', pymongo.ASCENDING)
 

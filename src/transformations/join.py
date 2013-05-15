@@ -5,7 +5,7 @@ class JoinMultiValueAttribute(BaseTransformation):
     optional separator.
 
     '''
-    def __init__(self, attribute, separator, newname):
+    def __init__(self, attribute, separator, newname=None):
         '''
         >>>joiner = JoinMultiValueAttribute('owner', 'info')
 
@@ -13,7 +13,10 @@ class JoinMultiValueAttribute(BaseTransformation):
         '''
         self.attribute = attribute
         self.separator = separator
-        self.newname = newname
+        if newname is None:
+            self.newname = attribute
+        else:
+            self.newname = newname
  
     def transform(self, ldapobject):
             try:

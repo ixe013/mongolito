@@ -123,3 +123,24 @@ def pattern_from_javascript(pattern):
 
     return pattern
     
+def get_nested_attribute(ldapobject, attribute):
+    '''Returns an attribute with code that is metadata aware.
+
+    get_attribute('mongolito.rdn',ldapobject) will become
+    ldapobject['mongolito']['rdn']
+
+    returns a KeyError if any key is missing (either mongolito
+    or rdn, in this example).
+
+    For regular keys, defaults to ldapboject[attribute]
+
+    '''
+    try:
+        #Get the first member
+        key, remaining_keys = attribute.split('.',1)
+        return get_nested_attribute(ldapobject[key], remaining_keys)
+    except ValueError:
+        #We've hit the last pert of the key, return that
+        #Might raise a KeyError, just a like a dict.
+        return ldapobject[attribute]
+    

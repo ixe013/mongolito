@@ -3,7 +3,6 @@
 This is some text about mongolito.
 """
 import argparse
-import pymongo
 import sys
 
 import insensitivedict
@@ -26,6 +25,11 @@ def addArguments(parser):
                       choices=['ldif','mongo'],
                       help="The destination and format of transformed record(s).")
 
+    parser.add_argument("-q",
+                      "--quiet", dest="quiet",
+                      action='store_true',
+                      help="Do not display progress.")
+
     return parser
 
 
@@ -46,6 +50,11 @@ def process(source, filters, transformations, output, progress=update_progress):
 
     try:
         for ldapObject in pipeline(source.search(filters)):
+            try:
+                #Remove the metadata
+                del ldapObject['mongolito']
+            except KeyError:
+                pass
             output.write(insensitivedict.InsensitiveDict(ldapObject))
             num_objects += 1
             progress(num_objects)
@@ -121,6 +130,9 @@ def getSourceDestination():
 
     #Retreive the values for the new arguments
     args = parser.parse_args(other_args)
+
+    if args.quiet:
+        update_progress = lambda x: None
 
     return source.create(args), destination.create(args)
     

@@ -176,6 +176,12 @@ def convertLDIFFragment(fragment):
             #First occurence of this attribute for this object
             ldapObject[attribute] = value
 
+    try:
+        #Changetype is overriddent, no need to keep it
+        del ldapObject['changetype']
+    except KeyError:
+        pass
+
     return ldapObject
         
 
