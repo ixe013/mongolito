@@ -179,7 +179,7 @@ class ModuleTest(unittest.TestCase):
             'dn':'ou=people,ou=example,ou=com',
             'ou':'people',
             'single':'abracadabra',
-            'multi':['abracadabra', 'apple', 'cat'],
+            'multi':['abracadabra', 'apple', 'cat', 'sky'],
             'untouched':'blah'
         }
         
@@ -196,11 +196,14 @@ class ModuleTest(unittest.TestCase):
         renamer = RenameValue('multi', '/[a]/', '4')
         renamer.transform(ldapobject)
 
+        renamer = RenameValue('multi', '/[k]/', '|<')
+        renamer.transform(ldapobject)
+
         expected = {
             'dn':'ou=aliens,ou=example,ou=com',
             'ou':'aliens',
             'single':'4br4c4d4br4',
-            'multi':['4br4c4d4br4', '4pple', 'c4t'],
+            'multi':['4br4c4d4br4', '4pple', 'c4t', 's|<y'],
             'untouched':'blah'
         }
 

@@ -1,5 +1,7 @@
 import re
 
+import utils
+
 from transformations import BaseTransformation
 
 class RenameValue(BaseTransformation):
@@ -16,7 +18,7 @@ class RenameValue(BaseTransformation):
         :attribute the name of the attribute from which a value must be removed
         '''
         self.attribute = attribute
-        self.pattern = re.compile(pattern.strip('/'), flags=re.IGNORECASE)
+        self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
         self.replacement = replacement
  
     def transform(self, ldapobject):

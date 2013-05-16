@@ -1,5 +1,7 @@
 import re
 
+import utils
+
 from transformations import BaseTransformation
 
 class RenameAttribute(BaseTransformation):
@@ -16,7 +18,7 @@ class RenameAttribute(BaseTransformation):
         :pattern A valid PCRE pattern
         :replacement A string (than can refer to the pattern with expression groups)
         '''
-        self.pattern = re.compile(pattern)
+        self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
         self.replacement = replacement
  
     def transform(self, ldapobject):

@@ -1,5 +1,7 @@
 import re
 
+import utils
+
 from transformations import BaseTransformation
 
 class RemoveValue(BaseTransformation):
@@ -18,7 +20,7 @@ class RemoveValue(BaseTransformation):
         :value the value to be removed. Can be a regular expression enclosed in //
         '''
         self.attribute = attribute
-        self.pattern = re.compile(value.strip('/').rstrip('/i'), flags=re.IGNORECASE)
+        self.pattern = re.compile(utils.pattern_from_javascript(value), flags=re.IGNORECASE)
  
     def transform(self, ldapobject):
         '''

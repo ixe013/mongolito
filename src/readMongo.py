@@ -48,6 +48,8 @@ class MongoReader(object):
         Search is always case insensitive.
 
         '''
+        #TODO: Change utils.regex_from_javascript to read the trailing i
+        #      instead of a flag for case insensitivity
         pattern = re.compile('/(.*)/(i)?')
 
         for attribute,value in query.iteritems():

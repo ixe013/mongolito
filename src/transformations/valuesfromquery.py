@@ -39,21 +39,27 @@ class ValuesFromQuery(BaseTransformation):
         
     def execute_query(self, attribute):
         '''Runs the sub query.
-        Running the sub query means that :
+        Running the sub query means that the attribute we must work with was
+        present in the object were we sent to transform. 
+        Now :
         1. We see if the attribute's value matches a pattern we have to lookup 
         2. From the previous match, we have a bunch of groups.
         3. Replace each placeholder with the corresponding group
         4. call get_attribute (which is a search that returns an array)
         '''
-        results = []
-        #Try the pattern
+        #By default, we leave the attribute alone
+        results = [attribute]
+
+        #We only lookup original values that match
+        #the supplied pattern
         match = self.pattern.search(attribute)
-        #If it matches
+
         if match:
             #We must translate any place holders
             query = self.set_query_values(match.groups())
 
-            #Build an array of values
+            #Build an array of values. Most of the time, only
+            #one result will be returned
             results = [r for r in self.source.get_attribute(query, self.selected)]
 
         return results
