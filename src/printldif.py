@@ -1,21 +1,56 @@
 import argparse
 import base64
 import string
+import textwrap
 
 
 RFC2849_MAX_LINE = 76
 CHUNK_MAX_VALUES = 1337
 
-def RFC2849WrappedOuput(line):
-    '''Slices the attribute-value pair (which might be base64
-    encoded at this point) into lines of at most 76 characters,
-    with each wrapped line begining with a single space.
-
+def RFC2849WrappedOuput(attribute, separator, value):
+#def RFC2849WrappedOuput(attribute, separator, value):
+    '''Wraps the value in a RFC2849 compliant manner.
     Returns a array of lines to print.'''
-    #TODO: 
-    return [line]
+    wrapper = textwrap.TextWrapper()
+
+    #Wrap length is the maximum line length, minus the leading space
+    wrapper.width=RFC2849_MAX_LINE                        
+    #We handle white space ourselves
+    wrapper.drop_whitespace = False
+
+    #The initial whitespace will be replaced by the attribute name
+    #and ::, the encoded line separator, later on in this method
+    wrapper.initial_indent=' '*(len(attribute)+len(separator)+1)
+
+    #Other lines begin with a single space
+    wrapper.subsequent_indent=' '
+
+    #Wrap the whole thing
+    lines = wrapper.wrap(value)
+                                                
+    #Remove the leading blank space with the attribute name
+    lines[0] = attribute + separator + ' ' + lines[0].lstrip()
+        
+    #When we get here, we have it wrapped. But we might have been 
+    #unlucky and end up with a line that ends (or begins with a 
+    #space. Lets chechk for that.
+    if any(l.startswith('  ') or l.endswith(' ') for l in lines):
+        #We have a line that should be base64 encoded.
+        #the separator is doubled (the attribute stays the same)
+        #and the value is base64 encoded. This call is recursive
+        #but a base64 coded value will never have a leading or
+        #trailing space. It will always fail the test on the second
+        #try
+        lines = RFC2849WrappedOuput(attribute, separator*2, base64.b64encode(value))
+        
+    return lines
+
 
 def makePrintableAttributeAndValue(attribute, value):
+    '''Makes a string with attribute and value.
+    Makes shure that value contains only valid caracters. If not,
+    the value is base64 encoded and the :: separator is used
+    '''
     separator = ':'
 
     value = value.encode('utf-8')
@@ -34,7 +69,7 @@ def makePrintableAttributeAndValue(attribute, value):
         separator = separator*2
         value = base64.b64encode(value)
             
-    return attribute+separator+' '+value
+    return attribute, separator, value
 
         
 class LDIFPrinter(object):
@@ -68,8 +103,8 @@ class LDIFPrinter(object):
     def comment(self, text):
         print >> self.ldiffile, '#', text
 
-    def printAttributeAndValue(self, printable):
-        print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(printable))
+    def printAttributeAndValue(self, attribute, separator, value):
+        print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(attribute, separator, value))
 
     def write(self, ldapobject):
         '''Prints a Python dict that represents a ldap object in a sorted matter
