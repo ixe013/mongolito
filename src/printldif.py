@@ -46,35 +46,11 @@ def RFC2849WrappedOuput(attribute, separator, value):
     return lines
 
 
-def makePrintableAttributeAndValue(attribute, value):
-    '''Makes a string with attribute and value.
-    Makes shure that value contains only valid caracters. If not,
-    the value is base64 encoded and the :: separator is used
-    '''
-    separator = ':'
-
-    value = value.encode('utf-8')
-
-    #If line ends with a space, we must base64 it.
-    if value.endswith(' '):
-        separator = separator*2
-        value = base64.b64encode(value)
-    #Else if is has anything other than plain old ascii characters
-    #(binary values like jpeg or certificates fall under this)
-    elif not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
-        separator = separator*2
-        value = base64.b64encode(value)
-    #And me make a special case with the password (obscurity)
-    elif 'userpassword' == attribute.lower():
-        separator = separator*2
-        value = base64.b64encode(value)
-            
-    return attribute, separator, value
-
-        
 class LDIFPrinter(object):
-    def __init__(self, ldiffile, overwrite):
+    def __init__(self, ldiffile, overwrite, dontwrap, dontencode):
         self.ldiffile = ldiffile
+        self.dontwrap = dontwrap
+        self.dontencode = dontencode
 
         if overwrite:
             self.ldiffile.truncate(0)
@@ -93,18 +69,57 @@ class LDIFPrinter(object):
                           action='store_true',
                           help="Will overwrite the destination if it exists")
 
+        group.add_argument("-r",
+                          "--dontwrap", dest="dontwrap",
+                          action='store_true',
+                          help="Will not wrap lines longer than 76 chars.")
+
+        group.add_argument("-6",
+                          "--dontencode", dest="dontencode",
+                          action='store_true',
+                          help="Do not base64 encode strings that a non-ascii caracters in them (will output utf-8 instead).")
+
         return parser
 
     @staticmethod
     def create(args):
-        return LDIFPrinter(args.ldiffile, args.overwrite)
+        return LDIFPrinter(args.ldiffile, args.overwrite, args.dontwrap, args.dontencode)
 
 
     def comment(self, text):
         print >> self.ldiffile, '#', text
 
+
+    def makePrintableAttributeAndValue(self, attribute, value):
+        '''Makes a string with attribute and value.
+        Makes shure that value contains only valid caracters. If not,
+        the value is base64 encoded and the :: separator is used
+        '''
+        separator = ':'
+
+        value = value.encode('utf-8')
+
+        #Unless a flag was passed asking not to encode
+        if not self.dontencode:
+            #if it is has anything other than plain old ascii characters
+            #(binary values like jpeg or certificates fall under this)
+            if not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
+                separator = separator*2
+                value = base64.b64encode(value)
+            #And me make a special case with the password (obscurity)
+            elif 'userpassword' == attribute.lower():
+                separator = separator*2
+                value = base64.b64encode(value)
+                
+        return attribute, separator, value
+
+        
     def printAttributeAndValue(self, attribute, separator, value):
-        print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(attribute, separator, value))
+        if self.dontwrap:
+            print >> self.ldiffile, '\n'.join([attribute+separator+' '+value])
+        else:
+            print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(attribute, separator, value))
+
 
     def write(self, ldapobject):
         '''Prints a Python dict that represents a ldap object in a sorted matter
@@ -118,18 +133,21 @@ class LDIFPrinter(object):
         #dn is always first
         #print 'dn:', ldapobject['dn']
         dn = ldapobject['dn'] 
-        self.printAttributeAndValue(makePrintableAttributeAndValue('dn',dn))
+        attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
+        self.printAttributeAndValue(attribute, separator, value)
 
         #Remove the attributes we already printed
         del ldapobject['dn']
         
         #This a changetype add, we add it
-        self.printAttributeAndValue(makePrintableAttributeAndValue('changetype','add'))
+        attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
+        self.printAttributeAndValue(attribute, separator, value)
 
         #Now with the object classes
         try:
             for objclass in sorted(ldapobject['objectclass']):
-                self.printAttributeAndValue(makePrintableAttributeAndValue('objectclass',objclass))
+                attribute, separator, value = self.makePrintableAttributeAndValue('objectclass',objclass)
+                self.printAttributeAndValue(attribute, separator, value)
             del ldapobject['objectclass']
         except KeyError:
             #object class is not mandatory
@@ -143,7 +161,8 @@ class LDIFPrinter(object):
             #because string is iterable but will not produce the
             #output we are looking for
             if isinstance(ldapobject[name], basestring):
-                self.printAttributeAndValue(makePrintableAttributeAndValue(name,ldapobject[name]))
+                attribute, separator, value = self.makePrintableAttributeAndValue(name,ldapobject[name])
+                self.printAttributeAndValue(attribute, separator, value)
             else:
                 #Print values prefixed with attribute name, sorted
                 values = sorted(ldapobject[name])
@@ -158,7 +177,8 @@ class LDIFPrinter(object):
                 #Only so many attributes can fit in a LDIF record
                 #TODO Put back the test of chunked values
                 for value in values[:CHUNK_MAX_VALUES]:
-                    self.printAttributeAndValue(makePrintableAttributeAndValue(name,value))
+                    attribute, separator, value = self.makePrintableAttributeAndValue(name,value)
+                    self.printAttributeAndValue(attribute, separator, value)
                 
         #Ends with an empty line
         print >> self.ldiffile
@@ -170,13 +190,17 @@ class LDIFPrinter(object):
 
             while ldapobject[large_attribute][next_chunk:next_chunk+CHUNK_MAX_VALUES]:
                 #Output a changetype modify header
-                self.printAttributeAndValue(makePrintableAttributeAndValue('dn',dn))
-                self.printAttributeAndValue(makePrintableAttributeAndValue('changetype','modify'))
-                self.printAttributeAndValue(makePrintableAttributeAndValue('add',large_attribute))
+                attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
+                self.printAttributeAndValue(attribute, separator, value)
+                attribute, separator, value = self.makePrintableAttributeAndValue('changetype','modify')
+                self.printAttributeAndValue(attribute, separator, value)
+                attribute, separator, value = self.makePrintableAttributeAndValue('add',large_attribute)
+                self.printAttributeAndValue(attribute, separator, value)
 
                 #For each remaining value (which can also be chunked)
                 for value in values[next_chunk:next_chunk+CHUNK_MAX_VALUES]:
-                    self.printAttributeAndValue(makePrintableAttributeAndValue(large_attribute, value))
+                    attribute, separator, value = self.makePrintableAttributeAndValue(large_attribute, value)
+                    self.printAttributeAndValue(attribute, separator, value)
 
                 #Ends with a separator
                 print >> self.ldiffile, '-'
@@ -185,3 +209,4 @@ class LDIFPrinter(object):
                 
                 next_chunk = next_chunk + CHUNK_MAX_VALUES
                 
+

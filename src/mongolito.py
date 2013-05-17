@@ -3,6 +3,7 @@
 This is some text about mongolito.
 """
 import argparse
+import logging
 import sys
 
 import insensitivedict
@@ -113,6 +114,8 @@ def getOutputClass(args):
 
     
 def getSourceDestination():
+    initialize_logging()
+
     '''Returns the source and destination object as a tuple'''
     parser = createArgumentParser()
 
@@ -136,6 +139,8 @@ def getSourceDestination():
 
     return source.create(args), destination.create(args)
     
+def initialize_logging():
+    logging.basicConfig(filename='mongolito.log', level=logging.INFO)    
 
 def main():
     source, destination = getSourceDestination()

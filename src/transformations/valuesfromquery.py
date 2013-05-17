@@ -1,4 +1,6 @@
+import logging 
 import re
+import sys
 
 import utils
 
@@ -47,9 +49,6 @@ class ValuesFromQuery(BaseTransformation):
         3. Replace each placeholder with the corresponding group
         4. call get_attribute (which is a search that returns an array)
         '''
-        #By default, we leave the attribute alone
-        results = [attribute]
-
         #We only lookup original values that match
         #the supplied pattern
         match = self.pattern.search(attribute)
@@ -61,6 +60,11 @@ class ValuesFromQuery(BaseTransformation):
             #Build an array of values. Most of the time, only
             #one result will be returned
             results = [r for r in self.source.get_attribute(query, self.selected)]
+            
+            if not results:
+                logging.warn('{0} not found in subquery'.format(attribute))
+        else:
+            results = [attribute]
 
         return results
         
