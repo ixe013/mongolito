@@ -31,7 +31,7 @@ class MyTest(unittest.TestCase):
            ' GUgZMOpbMOpZ2F0aW9uLiBOZSBjb250aWVucyBwYXM\n',
            ' gZGUgYmFzZXMgZGUgZG9ubsOpZXMu\n',
            'result: 0\n',
-           'continue:\n',
+           'continue: \n',
            ' OnNextLine\n',
            '#Trailing comments are ignored, not forwarded\n',
            '\n',
