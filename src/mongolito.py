@@ -5,6 +5,7 @@ This is some text about mongolito.
 import argparse
 import logging
 import sys
+import time
 
 import insensitivedict
 import daisychain
@@ -140,7 +141,7 @@ def getSourceDestination():
     return source.create(args), destination.create(args)
     
 def initialize_logging():
-    logging.basicConfig(filename='mongolito.log', level=logging.INFO)    
+    logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'), level=logging.INFO)    
 
 def main():
     source, destination = getSourceDestination()
