@@ -7,7 +7,8 @@ class CopyAttribute(BaseTransformation):
 
     def transform(self, ldapobject):
         '''Copies an attribute to another one, leaving the original 
-        intact, unlike RenameAttribute
+        intact, unlike RenameAttribute. If the destination attribute
+        exists, it will be overwritten.
 
         '''
         try:

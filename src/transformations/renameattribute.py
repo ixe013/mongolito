@@ -25,6 +25,10 @@ class RenameAttribute(BaseTransformation):
         '''
         :data a dictionary reprenting one entry
         '''
+        #FIXME : regular expression looks overkill... code would be 
+        #simpler and use less memory if a simple text based renamed
+        #was used. The dict is already case insensitive anyway...
+
         #Copy over to a new dict is easier
         transformed = {}
     

@@ -28,30 +28,37 @@ class RemoveValue(BaseTransformation):
         '''
         #For each dictionary object to process
         #For each key value pair in the orginal dict
-        for attribute,value in ldapobject.iteritems():
-            if attribute == self.attribute:
-                #If the attribute is multi-valued
-                if isinstance(value, list): 
-                    #Remove the value
-                    new_value = filter(lambda v: not self.pattern.search(v), value)
-                    #Make a single item list into that item
-                    if len(new_value)==1:
-                        ldapobject[attribute] = new_value[0]
-                    #Delete the attribute if it was the last item
-                    elif len(new_value)==0:
-                        del ldapobject[attribute]
-                    #Or save the remaining items from the list
-                    else:
-                        ldapobject[attribute] = new_value
+        try:
+            value = ldapobject[self.attribute]
 
-                #If the attribute is a string
-                elif isinstance(value, basestring):
-                    if self.pattern.search(value):
-                        del ldapobject[attribute]
+            #If the attribute is multi-valued
+            if isinstance(value, list): 
+                #Remove the value
+                new_value = filter(lambda v: not self.pattern.search(v), value)
+                #Make a single item list into that item
+                if len(new_value)==1:
+                    ldapobject[self.attribute] = new_value[0]
+                #Delete the attribute if it was the last item
+                elif len(new_value)==0:
+                    del ldapobject[self.attribute]
+                #Or save the remaining items from the list
+                else:
+                    ldapobject[self.attribute] = new_value
 
-                #The attribute name is not a regex, so there can only be
-                #one match.
-                break
+            #If the attribute is a string
+            elif isinstance(value, basestring):
+                if self.pattern.search(value):
+                    del ldapobject[self.attribute]
+            else:
+                #TODO: Could we remove a binary value, based on certain criteria ?
+                #Maybe we could look for certain fieds in a certificate, or images
+                #of a certain size, etc.
+                pass
+
+        except KeyError:
+            #The attribute name is not a regex, so there can only be
+            #one match, or none.
+            pass
 
         #Return the object, possibly modified                
         return ldapobject
