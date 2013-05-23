@@ -74,21 +74,29 @@ class MongoReader(object):
         
     def get_attribute(self, query={}, attribute = 'dn', error=KeyError):
         '''Returns an iterator over a single attribute from a search'''
-        for ldapobject in self.search(query):
+        for ldapobject in self.search(query, [attribute]):
             try:
                 yield ldapobject[attribute]
             except KeyError as ke:
                 if not error is None:
                     raise ke
 
-    def search(self, query = {}):
+    def search(self, query = {}, attributes=[]):
         '''Thin wrapper over pymongo.collection.find'''
 
         #Create the query from the syntaxic sugar
         query = MongoReader.convert_embeeded_regex(query)
         
+        #We always remove the _id field.
+        projection = {'_id':0 }
+        #If attributes is not empty, then they will be 
+        #added to the projection so that only those will be 
+        #returned. If is is empty (the default), this
+        #line has no effect
+        projection.update(dict.fromkeys(attributes, 1))
+
         #Remove the MongoDB _id and all of our metadata
-        cursor = self.collection.find(query, {'_id':0 })
+        cursor = self.collection.find(query, projection)
         #Sort so that parent show before their childrens
         cursor = cursor.sort('mongolito.parent', pymongo.ASCENDING)
 
