@@ -9,6 +9,7 @@ from transformations.renameattribute import RenameAttribute
 from transformations.renamevalue import RenameValue
 from transformations.removeattribute import RemoveAttribute
 from transformations.makevaluesunique import MakeValuesUnique
+from transformations.mergeattributes import MergeAttributes
 from transformations.removevalue import RemoveValue
 
 class ModuleTest(unittest.TestCase):
@@ -246,6 +247,50 @@ class ModuleTest(unittest.TestCase):
         }
 
         self.assertEquals(ldapobject, expected)
+
+    def testMergeAttributes(self):
+        ldapobject = {
+            'cn':'blah',
+            'uniqueMember':'dude',
+            'equivalentToMe':['john','doe'],
+        }
+
+        #Merge uniqueMember and equivalentToMe in member
+        merger = MergeAttributes('member', 'uniqueMember', 'equivalentToMe')
+        merger.transform(ldapobject)
+
+        ldapobject['member'].sort()
+
+        expected = {
+            'cn':'blah',
+            'member':['doe','dude','john']
+        }
+
+        self.assertEquals(expected, ldapobject)
+
+        ldapobject = {
+            'cn':'blah',
+            'member':'ada',
+            'uniqueMember':'dude',
+            'equivalentToMe':['john','doe', 'ada'],
+        }
+
+        #Merge uniqueMember and equivalentToMe with existing member
+        merger = MergeAttributes('member', 'uniqueMember', 'equivalentToMe', 'member')
+        merger.transform(ldapobject)
+
+        #In this trivial, merging attributes is like a rename
+        merger = MergeAttributes('zzz', 'cn', 'does-not-exists')
+        merger.transform(ldapobject)
+
+        ldapobject['member'].sort()
+
+        expected = {
+            'zzz':'blah',
+            'member':['ada','doe','dude','john']
+        }
+
+        self.assertEquals(expected, ldapobject)
 
 
 if __name__ == "__main__":
