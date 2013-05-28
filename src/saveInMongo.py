@@ -78,14 +78,28 @@ class MongoWriter(object):
                 try:
                     ldapobject['mongolito']['rdn'] = ldapobject['uid'].lower()
                 except KeyError:
+                    #TODO use first component, like OU or DC?
                     pass
 
+            
             #I though there would be an implict conversion to dict, but
             #there is not. Let's make one.
-            ldapobject = dict(zip(ldapobject.keys(), ldapobject.values()))
+            #This line works in most cases :
+            #ldapobject = dict(zip(ldapobject.keys(), ldapobject.values()))
+            #But Mongo will fail to insert any binary objects that are in 
+            #ldapobject.values(). The zip statement above can be written in
+            #a single line, but the following is clearer imo
+            mongoobject = {}
+
+            for attribute, value in ldapobject.iteritems():
+                if not isinstance(value, bytearray):
+                    mongoobject[attribute] = value
+                else:
+                    mongoobject[attribute] = bson.binary.Binary(str(value))
 
             #Upsert the object
-            self.collection.update(spec, ldapobject, upsert=True)
+            self.collection.update(spec, mongoobject, upsert=True)
+
         except KeyError:
             raise SaveException(-1, 'dn', 'Object does not have a dn attribute')
         except bson.errors.InvalidStringData:

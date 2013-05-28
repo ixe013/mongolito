@@ -112,6 +112,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             #attribute: value pair, save it.
 
             #(bring 8 bit ascii values in the utf8 world)
+            #base64 coded strings are taken care of later
             line = line.decode('latin_1').encode('utf-8')
             lines.append( line.strip() )
 
@@ -162,6 +163,24 @@ def convertLDIFFragment(fragment):
         else:
             #String leading white space
             value = value.strip()
+
+        try:
+            #Do we have a option in the format ?
+            #Like userCertificate;binary
+            attribute = attribute.rsplit(';',1)[1]
+            #If nothing was raised, then we do have
+            #a binary value. Change the type so we can
+            #differentiate it later
+            value = bytearray(value)
+        except IndexError:
+            #There are no options to consider
+            pass
+        
+        try:
+            #This is the test that the Mongo driver performs
+            value.decode('utf-8')
+        except UnicodeDecodeError:
+            value = bytearray(value)
 
         #Multiple attributes are turned into an array
         if attribute in ldapObject.keys(): 
