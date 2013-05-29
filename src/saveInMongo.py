@@ -52,6 +52,19 @@ class MongoWriter(object):
 
         return parser
 
+    def convert_to_mongo_datatype(self, value):
+        '''Makes sure that value(s) are in a datatype that Mongo will accept.
+
+        Converts byterray to Binary, recursing into lists
+        
+        '''
+        if isinstance(value, list):
+            value = [self.convert_to_mongo_datatype(v) for v in value]
+        elif isinstance(value, bytearray):
+            value = bson.binary.Binary(str(value))
+
+        return value
+
  
     def write(self, ldapobject):
         '''Saves the ldapobject in a Mongo database
@@ -92,17 +105,16 @@ class MongoWriter(object):
             mongoobject = {}
 
             for attribute, value in ldapobject.iteritems():
-                if not isinstance(value, bytearray):
-                    mongoobject[attribute] = value
-                else:
-                    mongoobject[attribute] = bson.binary.Binary(str(value))
+                mongoobject[attribute] = self.convert_to_mongo_datatype(value)
 
             #Upsert the object
             self.collection.update(spec, mongoobject, upsert=True)
 
         except KeyError:
             raise SaveException(-1, 'dn', 'Object does not have a dn attribute')
+        except bson.errors.InvalidDocument:
+            raise SaveException(-1, ldapobject['dn'], 'Encoding the object returned an invalid BSON document')
         except bson.errors.InvalidStringData:
-            raise SaveException(-1, 'dn', ldapobject['dn'])
+            raise SaveException(-1, ldapobject['dn'], 'Object has a value that is not properly encoded')
 
 
