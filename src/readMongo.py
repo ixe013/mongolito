@@ -99,7 +99,9 @@ class MongoReader(object):
         cursor = self.collection.find(query, projection)
         #Sort so that parent show before their childrens
         cursor = cursor.sort('mongolito.parent', pymongo.ASCENDING)
+        #And sort children by rdn
+        cursor = cursor.sort('mongolito.rdn', pymongo.ASCENDING)
 
-        #The cursor is already iterable
+        #The cursor is already iterable, return it
         return cursor
 
