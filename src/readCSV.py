@@ -7,9 +7,10 @@ import argparse
 
 
 class CSVReader(object): 
-    def __init__(self, ldiffile):
+    def __init__(self, ldiffile, delimiter, innerseparator):
         self.ldiffile = ldiffile
-
+        self.delimiter = delimiter
+        self.innerseparator = innerseparator
 
     @staticmethod
     def addArguments(parser):
@@ -27,14 +28,11 @@ class CSVReader(object):
         return CSVReader(args.ldiffile)
 
     def search(self, query = {}):
-        #The line count is there just to put in the Exception record if something
-        #goes wrong.
-        lineCount = 0
-
-        for ldapobject in csv.DictReader(self.ldiffile)
-            lineCount = lineCount+1
+        for ldapobject in csv.DictReader(self.ldiffile, delimiter=self.delimiter):
+            for key, value in ldapobject.iteritems():
+                if self.innerseparator in value:
+                    ldapobject[key] = value.split(self.innerseparator)
+            
             yield ldapobject
-
-        return lineCount
 
 
