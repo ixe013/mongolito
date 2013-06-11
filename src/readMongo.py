@@ -71,6 +71,7 @@ class MongoReader(object):
                     query[attribute] = [MongoReader.convert_embeeded_regex(rule) for rule in value]
 
         return query
+
         
     def get_attribute(self, query={}, attribute = 'dn', error=KeyError):
         '''Returns an iterator over a single attribute from a search'''
@@ -78,8 +79,9 @@ class MongoReader(object):
             try:
                 yield ldapobject[attribute]
             except KeyError as ke:
-                if not error is None:
+                if error is not None:
                     raise ke
+
 
     def search(self, query = {}, attributes=[]):
         '''Thin wrapper over pymongo.collection.find'''

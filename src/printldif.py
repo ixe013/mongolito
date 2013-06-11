@@ -107,7 +107,8 @@ class LDIFPrinter(object):
                 separator = separator*2
                 value = base64.b64encode(value)
             #And me make a special case with the password (obscurity)
-            elif 'userpassword' == attribute.lower():
+            #FIXME Is this really worth it ? 
+            elif attribute.lower() in ['userpassword', 'unicodePwd']:
                 separator = separator*2
                 value = base64.b64encode(value)
                 
@@ -153,7 +154,7 @@ class LDIFPrinter(object):
             #object class is not mandatory
             pass
 
-        large_attributes = []
+        large_attributes = {}
 
         #This loops prints what is left
         for name in sorted(ldapobject.keys()):
@@ -164,31 +165,32 @@ class LDIFPrinter(object):
                 attribute, separator, value = self.makePrintableAttributeAndValue(name,ldapobject[name])
                 self.printAttributeAndValue(attribute, separator, value)
             else:
-                #Print values prefixed with attribute name, sorted
-                values = sorted(ldapobject[name])
+                #Print values prefixed with attribute name, sorted, unique
+                values = sorted(set(ldapobject[name]))
+
+                #Only so many attributes can fit in a LDIF record
+                #TODO Put back the test of chunked values
+                for value in values[:CHUNK_MAX_VALUES]:
+                    attribute, separator, value = self.makePrintableAttributeAndValue(name,value)
+                    self.printAttributeAndValue(attribute, separator, value)
 
                 if len(values) > CHUNK_MAX_VALUES:
                     #TODO add another changetype: modify entry with the same dn
                     #(simply wrap the above into a question)
                     self.comment('Warning : there are {0} values for attribute name "{1}".'.format(len(values), name))
                     #Save the attribute for later (but we could just run the list again)
-                    large_attributes.append(name)
-                
-                #Only so many attributes can fit in a LDIF record
-                #TODO Put back the test of chunked values
-                for value in values[:CHUNK_MAX_VALUES]:
-                    attribute, separator, value = self.makePrintableAttributeAndValue(name,value)
-                    self.printAttributeAndValue(attribute, separator, value)
+                    large_attributes[name] = values[CHUNK_MAX_VALUES:]
+
                 
         #Ends with an empty line
         print >> self.ldiffile
 
         #For each attribute that had too many values
-        for large_attribute in large_attributes:
+        for large_attribute, values in large_attributes.items():
             #Starting with the last entry we left out
-            next_chunk = CHUNK_MAX_VALUES
+            next_chunk = 0
 
-            while ldapobject[large_attribute][next_chunk:next_chunk+CHUNK_MAX_VALUES]:
+            while values[next_chunk:next_chunk+CHUNK_MAX_VALUES]:
                 #Output a changetype modify header
                 attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
                 self.printAttributeAndValue(attribute, separator, value)
@@ -207,6 +209,5 @@ class LDIFPrinter(object):
                 #followed by an empty line
                 print >> self.ldiffile
                 
-                next_chunk = next_chunk + CHUNK_MAX_VALUES
+                next_chunk += CHUNK_MAX_VALUES
                 
-
