@@ -38,7 +38,7 @@ class MongoReader(object):
 
     @staticmethod
     def create(args):
-        return MongoReader('', args.mongoHost, args.database, args.collection)
+        return MongoReader(args.mongoHost, args.database, args.collection)
 
 
     @staticmethod

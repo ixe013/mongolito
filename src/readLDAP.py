@@ -1,9 +1,25 @@
+import ldap
+import ldapurl
 import re
 
 class LDAPReader(object):
 
-    def __init__(self, host, database, collection):
-        pass
+    def __init__(self, uri, user, password):
+        #FIXME : try and handle ValueError ?
+        uri.replace(',','%2c')
+        ldap_url = ldap.LDAPUrl(uri)
+        self.base = ldap_url.dn
+
+        ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
+
+        self.connection = ldap.ldapobject.LDAPObject('{0}://{1}:{2}'.format('ldaps',host, 636))
+
+        self.connection.set_option(ldap.OPT_REFERRALS, 0)
+        self.connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+        self.connection.set_option(ldap.OPT_X_TLS,ldap.OPT_X_TLS_DEMAND)
+        self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
+
+        self.connection.simple_bind_s(user, password)
 
 
     @staticmethod
@@ -13,8 +29,16 @@ class LDAPReader(object):
 
     @staticmethod
     def create(args):
-        return MongoReader('', args.mongoHost, args.database, args.collection)
+        return LDAPReader(args.uri)
 
+    def release(self):
+        try:
+            self.connection.unbind_s()
+        except ldap.LDAPError:
+            #Let the OS handle the close on our side, should not
+            #impact the server too much (assuming it is not closed
+            #already)
+            pass
 
     @staticmethod
     def create_from_uri(name, uri):
@@ -25,14 +49,6 @@ class LDAPReader(object):
 
         '''
         result = None
-        try:
-            import ldap
-
-
-        except ImportError:
-            #python-ldap is not installed
-            #TODO LOG Warning !!!
-            pass
 
         return result
 

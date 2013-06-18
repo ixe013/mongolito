@@ -146,7 +146,12 @@ class LDIFPrinter(object):
 
         #Now with the object classes
         try:
-            for objclass in sorted(ldapobject['objectclass']):
+            objectclasses = ldapobject['objectclass']
+
+            if isinstance(objectclasses, basestring):
+                objectclasses = [objectclasses]
+
+            for objclass in sorted(objectclasses):
                 attribute, separator, value = self.makePrintableAttributeAndValue('objectclass',objclass)
                 self.printAttributeAndValue(attribute, separator, value)
             del ldapobject['objectclass']
