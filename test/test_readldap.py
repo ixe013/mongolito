@@ -12,41 +12,31 @@ class MyTest(unittest.TestCase):
 
         query = collections.OrderedDict()
 
-        query['objectClass'] = ['top','user']
+        query['objectClass'] = ['user','userProxyFull']
         query['cn'] = 'dude'
         query['loginDisabled'] = 'TRUE'
 
         base, filt = reader.convert_query(query)
 
         self.assertEqual(base, 'dc=directory,dc=example,dc=com')
-        self.assertEqual(filt, r'(&(objectClass=top)(objectClass=user)(cn=dude)(loginDisabled=TRUE))')
+        self.assertEqual(filt, '(&(|(objectClass=user)(objectClass=userProxyFull))(cn=dude)(loginDisabled=TRUE))')
 
     def testConvertMetadataQuery(self):
         reader = readLDAP.LDAPReader.create_from_uri('', 'ldap://192.168.2.151/dc=directory,dc=example,dc=com')
 
         query = collections.OrderedDict()
 
-        query['objectClass'] = ['top','user']
-        query['mongolito.rdn'] = 'dude'
-        query['mongolito.parent'] = 'ou=users'
-        query['mongolito.path'] = 'dc=com,dc=example,dc=directory'
+        query['objectClass'] = ['userProxyFull','user']
+        query['description'] = 'Hello*'
+        query['mongolito.rdn'] = 'Dude'
+        query['mongolito.path'] = '/^dc=com,dc=example/'
+        #query['mongolito.path'] = 'dc=com,dc=example'
 
         base, filt = reader.convert_query(query)
 
-        self.assertEqual(base, r'dc=directory,dc=example,dc=com')
-        self.assertEqual(filt, r'(&(objectClass=top)(objectClass=user)(|(cn=Dude)(uid=Dude)))')
+        self.assertEqual(base, 'dc=example,dc=com')
+        self.assertEqual(filt, '(&(|(objectClass=userProxyFull)(objectClass=user))(|(cn=Dude)(uid=Dude)(ou=Dude))(description=Hello*))')
 
-        query = collections.OrderedDict()
-
-        query['objectClass'] = ['top','user']
-        query['mongolito.rdn'] = 'dude'
-        query['mongolito.parent'] = 'ou=users'
-        query['mongolito.path'] = '/^dc=com,dc=example'
-
-        base, filt = reader.convert_query(query)
-
-        self.assertEqual(base, r'dc=example,dc=com')
-        self.assertEqual(filt, r'(&(objectClass=top)(objectClass=user)(|(cn=Dude)(uid=Dude)))')
 
 if __name__ == "__main__":
     unittest.main()

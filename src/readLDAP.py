@@ -78,19 +78,30 @@ class LDAPReader(object):
                 if error is not None:
                     raise ke
 
+    def convert_query_element(self, attribute, value):
+        '''Turns a key, value pair into a ldap filter.
+        if the value is a list, items will be or'ed.'''
+        result = ''
+
+        if isinstance(value, list):
+            for v in value:
+                result += '({0}={1})'.format(attribute, v)
+
+            result = '(|{0})'.format(result)
+
+        else:
+            result += '({0}={1})'.format(attribute, value)
+
+        return result
+        
+
     def convert_query(self, query):
         result = ''
         base = self.base
 
-        #convert objectClass first
+        #convert objectClass first, as it is indexed (most of the time)
         try:
-            classes = query['objectClass']
-
-            if isinstance(classes, list):
-                for objclass in classes:
-                    result += '(objectClass={0})'.format(objclass)
-            else:
-                result += '(objectClass={0})'.format(classes)
+            result = self.convert_query_element('objectClass', query['objectClass'])
     
             del query['objectClass']
             
@@ -103,7 +114,8 @@ class LDAPReader(object):
         #first the rdn
         try:
             rdn = query['mongolito.rdn']
-            result += '(|(cn={0})(uid={0}))'.format(rdn)
+            result += '(|(cn={0})(uid={0})(ou={0}))'.format(rdn)
+            del query['mongolito.rdn']
         except KeyError:
             pass
 
@@ -111,24 +123,23 @@ class LDAPReader(object):
         try:
             path = query['mongolito.path']
             #'/^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic/',
-            temp_base = utils.pattern_from_javascript(path) 
             #'^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic',
             #We are replacing the base
             #Look at something along those lines
             #http://stackoverflow.com/a/14128905/591064
-            
+            #For now, we just use the path as the base (which we must flip). We also
+            #ignore the leading ^, if present
+            base = utils.reverse_path(utils.pattern_from_javascript(path).lstrip('^'))
+            del query['mongolito.path']
         except KeyError:
             pass
 
         #Convert other attributes
         for k, v in query.items():
-            if isinstance(v, list):
-                for objclass in v:
-                    result += '({0}={1})'.format(k, objclass)
-            else:
-                result += '({0}={1})'.format(k,v)
+            result += self.convert_query_element(k, v)
             
-        return base, r'(&{0})'.format(result)
+        return base, '(&{0})'.format(result)
+
 
     def search(self, query = {}, attributes=[]):
         '''Thin wrapper over pymongo.collection.find'''

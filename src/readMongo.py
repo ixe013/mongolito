@@ -1,16 +1,28 @@
 import pymongo
 import re
 
+def convert_query(query):
+    '''Converts a mongolito query to a MongoDB query, which is very similar.
+    It basically replaces values that are lists with a $in query operator.
+    Mongo will handle the rest.
+    '''
+    result = {}
+
+    for k,v in query.items():
+        if isinstance(v, list):
+            result[k] = {'$in':v}
+        else:
+            result[k] = v
+
+    return result
+    
+
 class MongoReader(object):
 
     def __init__(self, host, database, collection):
-        '''Creates a cursor to the supplied MongoDB database'''
-        connection = pymongo.MongoClient(host)
-
-        #The great thing about Mongo is that neither the database nor the collections
-        #need to exist before hand.
-        #That's a good thing, right ?
-        self.collection = connection[database][collection]
+        self.host = host
+        self.database = database
+        self.collection = collection
 
 
     @staticmethod
@@ -35,6 +47,18 @@ class MongoReader(object):
 
         return parser
 
+
+    def connect(self):
+        '''Creates a cursor to the supplied MongoDB database'''
+        connection = pymongo.MongoClient(self.host)
+
+        #The great thing about Mongo is that neither the database nor the collections
+        #need to exist before hand.
+        #That's a good thing, right ?
+        self.collection = connection[self.database][self.collection]
+
+    def disconnect(self):
+        pass
 
     @staticmethod
     def create(args):
@@ -105,6 +129,7 @@ class MongoReader(object):
                     query[attribute] = [MongoReader.convert_embeeded_regex(rule) for rule in value]
 
         return query
+
 
         
     def get_attribute(self, query={}, attribute = 'dn', error=KeyError):

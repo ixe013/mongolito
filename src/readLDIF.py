@@ -37,6 +37,11 @@ class LDIFReader(object):
 
         return parser
 
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
 
     @staticmethod
     def create(args):

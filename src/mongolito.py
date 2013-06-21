@@ -138,6 +138,7 @@ def getSourceDestination():
     if args.quiet:
         update_progress = lambda x: None
 
+    #FIXME clients have to call connect and disconnect. Is that bad ?
     return source.create(args), destination.create(args)
     
 def initialize_logging():
@@ -145,7 +146,14 @@ def initialize_logging():
 
 def main():
     source, destination = getSourceDestination()
+
+    source.connect()
+    destination.connect()
+
     process(source, {}, [], destination)
+
+    destination.disconnect()
+    source.disconnect()
 
 
 if __name__ == "__main__":
