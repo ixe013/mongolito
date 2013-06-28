@@ -99,6 +99,24 @@ class RandomUnicodePasswordGenerator(str):
         return makeUnicodePwd(randomPassword(self.length))
 
 
+def reverse_path(path):
+    '''Returns a string of all the components in reverse order
+
+    Whatever the order, applying this fonction twice has no effect
+
+    >>> reverse_path('CN=someone,DC=example,DC=com')
+    'dc=com,dc=example,cn=someone'
+    >>> reverse_path('DC=com')
+    'dc=com'
+
+    '''
+    components = path.split(',')
+    components.reverse()
+    #The parent is the joined path, minus the object 
+    #itself (which is now last in the list)
+    return ','.join(components).lower()
+
+
 def compute_path(dn):
     '''Returns a string of all the components minus the first one.
 
@@ -107,7 +125,7 @@ def compute_path(dn):
     >>> compute_path('CN=someone,DC=example,DC=com')
     'dc=example,dc=com'
     >>> compute_path('DC=com')
-    'dc=com'
+    ''
 
     '''
     components = dn.split(',')

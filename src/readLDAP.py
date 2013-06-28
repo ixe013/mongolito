@@ -38,8 +38,11 @@ class LDAPReader(object):
         self.connection = LDAPObjectStream(uri)
 
         if ldap_url.urlscheme == 'ldaps':
+<<<<<<< HEAD
             #FIXME : Proper handling of certificate, or at least
             #FIXME : make the ignore a connection setting
+=======
+>>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
             self.connection.set_option(ldap.OPT_REFERRALS, 0)
@@ -57,8 +60,13 @@ class LDAPReader(object):
     def create(args):
         return LDAPReader(args.uri)
 
+<<<<<<< HEAD
     def connect(self, user, password):
         self.connection.simple_bind_s(user, password)
+=======
+    def connect(self):
+        self.connection.simple_bind_s(self.user, self.password)
+>>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
 
     def disconnect(self):
         try:
@@ -95,6 +103,68 @@ class LDAPReader(object):
             except KeyError as ke:
                 if error is not None:
                     raise ke
+
+    def convert_query_element(self, attribute, value):
+        '''Turns a key, value pair into a ldap filter.
+        if the value is a list, items will be or'ed.'''
+        result = ''
+
+        if isinstance(value, list):
+            for v in value:
+                result += '({0}={1})'.format(attribute, v)
+
+            result = '(|{0})'.format(result)
+
+        else:
+            result += '({0}={1})'.format(attribute, value)
+
+        return result
+        
+
+    def convert_query(self, query):
+        result = ''
+        base = self.base
+
+        #convert objectClass first, as it is indexed (most of the time)
+        try:
+            result = self.convert_query_element('objectClass', query['objectClass'])
+    
+            del query['objectClass']
+            
+        except KeyError:
+            #We don't care about objectClass, unusual but valid
+            pass
+            
+        #Then metadata
+        #each in its own try except block
+        #first the rdn
+        try:
+            rdn = query['mongolito.rdn']
+            result += '(|(cn={0})(uid={0})(ou={0}))'.format(rdn)
+            del query['mongolito.rdn']
+        except KeyError:
+            pass
+
+        #then the path
+        try:
+            path = query['mongolito.path']
+            #'/^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic/',
+            #'^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic',
+            #We are replacing the base
+            #Look at something along those lines
+            #http://stackoverflow.com/a/14128905/591064
+            #For now, we just use the path as the base (which we must flip). We also
+            #ignore the leading ^, if present
+            base = utils.reverse_path(utils.pattern_from_javascript(path).lstrip('^'))
+            del query['mongolito.path']
+        except KeyError:
+            pass
+
+        #Convert other attributes
+        for k, v in query.items():
+            result += self.convert_query_element(k, v)
+            
+        return base, '(&{0})'.format(result)
 
 
     def convert_query_element(self, attribute, value):
