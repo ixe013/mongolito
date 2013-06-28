@@ -140,9 +140,25 @@ class LDIFPrinter(object):
         #Remove the attributes we already printed
         del ldapobject['dn']
         
-        #This a changetype add, we add it
-        attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
-        self.printAttributeAndValue(attribute, separator, value)
+        #Change type handling
+        try:
+            change = ldapobject['changetype']
+            attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
+            self.printAttributeAndValue(attribute, separator, value)
+
+            if change == 'modify':
+                if 'replace' in ldapobject:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('replace',ldapobject['replace'])
+                    self.printAttributeAndValue(attribute, separator, value)
+                elif 'modify' in ldapobject:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',ldapobject['modify'])
+                    self.printAttributeAndValue(attribute, separator, value)
+                    
+        except KeyError:
+            #This a changetype add, we add it
+            #Defaults to change type add
+            attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
+            self.printAttributeAndValue(attribute, separator, value)
 
         #Now with the object classes
         try:

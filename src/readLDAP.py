@@ -1,8 +1,26 @@
 import ldap
+import ldap.resiter
 import ldapurl
 import re
 import utils
 
+class LDAPObjectStream(ldap.ldapobject.LDAPObject, ldap.resiter.ResultProcessor):
+    pass
+
+def convert_raw_ldap_result(dn, raw):
+    result = {}
+
+    result['dn'] = dn
+
+    for k,v in raw.items():
+        if len(v) == 1:
+            result[k] = v[0]
+        else:
+            result[k] = v
+
+    return result
+
+        
 class LDAPReader(object):
 
     def __init__(self, uri):
@@ -11,15 +29,13 @@ class LDAPReader(object):
 
         #Will be use to understand queries with mongolito metadata later
         self.base = ldap_url.dn
-        self.user = ldap_url.who
-        self.password = ldap_url.cred
 
         #Encoding is not automatic, for some reason
         regex = re.compile("^<(.*)>(.*)<(.*)>$")
         r = regex.search(ldap_url.htmlHREF())
         uri = r.group(2)
 
-        self.connection = ldap.ldapobject.LDAPObject(uri)
+        self.connection = LDAPObjectStream(uri)
 
         if ldap_url.urlscheme == 'ldaps':
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
@@ -142,6 +158,14 @@ class LDAPReader(object):
 
 
     def search(self, query = {}, attributes=[]):
-        '''Thin wrapper over pymongo.collection.find'''
-        pass
+        base, query = convert_query(query)
 
+        #Async search
+        msg_id = self.connection.search(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes)
+
+        #allresults is a generator
+        for res_type,res_data,res_msgid,res_controls in self.connection.allresults(msg_id):
+            for dn,entry in res_data:
+                # process dn and entry
+                yield convert_raw_ldap_result(dn, entry)
+       
