@@ -39,7 +39,7 @@ def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
 
 
-def process(source, filters, transformations, output, progress=update_progress):
+def process(source, query, attributes, transformations, output, progress=update_progress):
     '''Somewhat generic loop. Could be refactored to filter, but
     that would require to keep the list in memory.'''
     num_objects = 0
@@ -51,7 +51,7 @@ def process(source, filters, transformations, output, progress=update_progress):
         progress = lambda x: None
 
     try:
-        for ldapObject in pipeline(source.search(filters)):
+        for ldapObject in pipeline(source.search(query, attributes)):
             try:
                 #Remove the metadata
                 del ldapObject['mongolito']
@@ -145,7 +145,7 @@ def initialize_logging():
 
 def main():
     source, destination = getSourceDestination()
-    process(source, {}, [], destination)
+    process(source, {}, [], [], destination)
 
 
 if __name__ == "__main__":

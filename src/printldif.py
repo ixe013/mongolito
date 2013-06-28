@@ -97,20 +97,25 @@ class LDIFPrinter(object):
         '''
         separator = ':'
 
-        value = value.encode('utf-8')
+        #FIXME : too much copy paste of code, refactor
+        try:
+            value = value.encode('utf-8')
 
-        #Unless a flag was passed asking not to encode
-        if not self.dontencode:
-            #if it is has anything other than plain old ascii characters
-            #(binary values like jpeg or certificates fall under this)
-            if not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
-                separator = separator*2
-                value = base64.b64encode(value)
-            #And me make a special case with the password (obscurity)
-            #FIXME Is this really worth it ? 
-            elif attribute.lower() in ['userpassword', 'unicodePwd']:
-                separator = separator*2
-                value = base64.b64encode(value)
+            #Unless a flag was passed asking not to encode
+            if not self.dontencode:
+                #if it is has anything other than plain old ascii characters
+                #(binary values like jpeg or certificates fall under this)
+                if not all(ord(c) >= ord(' ') and ord(c) < 127 for c in value):
+                    separator *= 2
+                    value = base64.b64encode(value)
+                #And me make a special case with the password (obscurity)
+                #FIXME Is this really worth it ? 
+                elif attribute.lower() in ['userpassword', 'unicodePwd']:
+                    separator *= 2
+                    value = base64.b64encode(value)
+        except UnicodeError:
+            separator *= 2
+            value = base64.b64encode(value)
                 
         return attribute, separator, value
 
@@ -140,9 +145,29 @@ class LDIFPrinter(object):
         #Remove the attributes we already printed
         del ldapobject['dn']
         
-        #This a changetype add, we add it
-        attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
-        self.printAttributeAndValue(attribute, separator, value)
+        #Change type handling
+        try:
+            change = ldapobject['changetype']
+            attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
+            self.printAttributeAndValue(attribute, separator, value)
+
+            if change == 'modify':
+                if 'replace' in ldapobject:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('replace',ldapobject['replace'])
+                    self.printAttributeAndValue(attribute, separator, value)
+                    del ldapobject['replace']
+                elif 'modify' in ldapobject:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',ldapobject['modify'])
+                    self.printAttributeAndValue(attribute, separator, value)
+                    del ldapobject['modify']
+
+            del ldapobject['changetype']
+                    
+        except KeyError:
+            #This a changetype add, we add it
+            #Defaults to change type add
+            attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
+            self.printAttributeAndValue(attribute, separator, value)
 
         #Now with the object classes
         try:

@@ -37,12 +37,17 @@ class LDIFReader(object):
 
         return parser
 
+    def connect(self):
+        pass
+
+    def disconnect(self):
+        pass
 
     @staticmethod
     def create(args):
         return LDIFReader(args.ldiffile)
 
-    def search(self, query = {}):
+    def search(self, query = {}, attributes=[]):
         #The line count is there just to put in the Exception record if something
         #goes wrong.
         lineCount = 0

@@ -1,3 +1,4 @@
+import base64
 import unittest
 import sys
 
@@ -9,8 +10,9 @@ class ModuleTest(unittest.TestCase):
         history = []
         length = 40
 
-        generator = utils.PasswordGenerator(length)
+        generator = utils.RandomPasswordGenerator(length)
 
+        #Can be used like this
         str(generator)
         
         #Make 100 random passwords, all different
@@ -26,11 +28,21 @@ class ModuleTest(unittest.TestCase):
         #It will have one special, lower, upper and digit
         length = 4
 
-        generator = utils.PasswordGenerator(length)
+        generator = utils.RandomPasswordGenerator(length)
         
         #If we ever come back, we have our password
         self.assertTrue(len(str(generator)) == 4)
         
+
+    def testUnicodePasswordGenerator(self):
+        generator = utils.RandomUnicodePasswordGenerator(len('newPassword'))
+        
+        encodedPassword = base64.b64encode(str(generator))
+        
+        #I only check the length
+        self.assertEqual(len(encodedPassword), len('IgBuAGUAdwBQAGEAcwBzAHcAbwByAGQAIgA='))
+        
+
     def testComputePath(self):
         self.assertEqual('dc=example,dc=com', utils.compute_path('OU=somewhere,DC=example,DC=com'))
         self.assertEqual('', utils.compute_path('DC=com'))
