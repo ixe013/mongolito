@@ -59,6 +59,7 @@ class LDAPReader(object):
 
     def connect(self, user, password):
         self.connection.simple_bind_s(user, password)
+        return self
 
     def disconnect(self):
         try:
@@ -68,6 +69,8 @@ class LDAPReader(object):
             #impact the server too much (assuming it is not closed
             #already)
             pass
+
+        return self
 
     @staticmethod
     def create_from_uri(name, uri):
@@ -96,23 +99,6 @@ class LDAPReader(object):
                 if error is not None:
                     raise ke
 
-    def convert_query_element(self, attribute, value):
-        '''Turns a key, value pair into a ldap filter.
-        if the value is a list, items will be or'ed.'''
-        result = ''
-
-        if isinstance(value, list):
-            for v in value:
-                result += '({0}={1})'.format(attribute, v)
-
-            result = '(|{0})'.format(result)
-
-        else:
-            result += '({0}={1})'.format(attribute, value)
-
-        return result
-        
-
     def convert_query(self, query):
         result = ''
         base = self.base
@@ -174,59 +160,10 @@ class LDAPReader(object):
             result += '({0}={1})'.format(attribute, value)
 
         return result
-        
-
-    def convert_query(self, query):
-        '''Returns a tuple (base,query), where base is the basedn of the serach
-        and query is a valid ldap filter
-        '''
-        result = ''
-        base = self.base
-
-        #convert objectClass first, as it is indexed (most of the time)
-        try:
-            result = self.convert_query_element('objectClass', query['objectClass'])
-    
-            del query['objectClass']
-            
-        except KeyError:
-            #We don't care about objectClass, unusual but valid
-            pass
-            
-        #Then metadata
-        #each in its own try except block
-        #first the rdn
-        try:
-            rdn = query['mongolito.rdn']
-            result += '(|(cn={0})(uid={0})(ou={0}))'.format(rdn)
-            del query['mongolito.rdn']
-        except KeyError:
-            pass
-
-        #then the path
-        try:
-            path = query['mongolito.path']
-            #'/^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic/',
-            #'^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic',
-            #We are replacing the base
-            #Look at something along those lines
-            #http://stackoverflow.com/a/14128905/591064
-            #For now, we just use the path as the base (which we must flip). We also
-            #ignore the leading ^, if present
-            base = utils.reverse_path(utils.pattern_from_javascript(path).lstrip('^'))
-            del query['mongolito.path']
-        except KeyError:
-            pass
-
-        #Convert other attributes
-        for k, v in query.items():
-            result += self.convert_query_element(k, v)
-            
-        return base, '(&{0})'.format(result)
 
 
     def search(self, query = {}, attributes=[]):
-        base, query = convert_query(query)
+        base, query = self.convert_query(query)
 
         #Async search
         msg_id = self.connection.search(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes)

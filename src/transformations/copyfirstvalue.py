@@ -6,7 +6,7 @@ class CopyFirstValueOfAttribute(BaseTransformation):
         self.fromattr = fromattr
         self.toattr = toattr
 
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''Takes the first attribute from an attribute and
         copies it over to another attribute. Works with mutli-
         values on both source and destination'''

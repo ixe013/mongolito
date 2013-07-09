@@ -5,7 +5,7 @@ class CopyAttribute(BaseTransformation):
         self.original = original
         self.copy = copy
 
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''Copies an attribute to another one, leaving the original 
         intact, unlike RenameAttribute. If the destination attribute
         exists, it will be overwritten.

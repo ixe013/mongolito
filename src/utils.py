@@ -150,6 +150,17 @@ def compute_parent(dn):
     #itself (which is now last in the list)
     return ','.join(components[:-1]).lower()
 
+def add_metadata(ldapobject, dn):
+    ldapobject['mongolito'] = { 'parent':utils.compute_parent(dn) ,
+                                'path':utils.compute_path(dn),
+                              }
+
+    #the RDN metadata is the value of the leftmost component. 
+    #For example, an object with this dn 
+    #  cn=USER,ou=people,dc=example,dc=com will
+    #mongolito.rdn will be 'user'
+    ldapobject['mongolito']['rdn'] = dn.split(',',1)[0].split('=')[1].lower()
+
 def regex_from_javascript(pattern, insensitive=True):
     '''Converts a javascript style regular expression to a 
     mongo regular expression suitable for in place replacement.

@@ -9,7 +9,6 @@ import sys
 import time
 
 import insensitivedict
-import daisychain
 import readLDIF
 import readMongo
 import printldif
@@ -53,7 +52,6 @@ def process(istream, ostream, showprogress=True):
     that has a write(dict) method. Undo can be None if no undo file is required.
 
     '''
-    num_objects = 0
 
     progress = update_progress
     #Eat progress if none is required
@@ -66,7 +64,7 @@ def process(istream, ostream, showprogress=True):
         generator = istream
 
     try:
-        for ldapobject in generator:
+        for num_objects, ldapobject in enumerate(generator):
             for rules, output, undo in ostream:
                 #The original ldapobject that will be sent to the methods must not be 
                 #modified. It is an interface contract, because technically speaking
@@ -115,11 +113,13 @@ def process(istream, ostream, showprogress=True):
     except UnicodeError as ue:
         print >> sys.stderr, ue
         
-    if showprogress and num_objects > 0:
-        print >> sys.stderr, ' -- done'
 
-    return num_objects
+def generate(istream, ostream):
+    def yielder(x):
+        yield x
 
+    for rules, output, undo in ostream:
+        process(istream, (rules, yielder, None))
 
 def createArgumentParser():
     '''Default argument parsing. Allows the developper to configure the 

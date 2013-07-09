@@ -28,6 +28,14 @@ class CSVReader(object):
     def create(args):
         return CSVReader(args.ldiffile)
 
+    #FIXME : should be in base class, mixin or similar
+    def connect(self):
+        return self
+
+    #FIXME : should be in base class, mixin or similar
+    def disconnect(self):
+        return self
+
     @staticmethod
     def create_from_uri(name, uri):
         '''Creates an instance from a named URI. The format is key value pair,

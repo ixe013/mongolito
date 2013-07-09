@@ -4,7 +4,7 @@ class MakeValuesUnique(BaseTransformation):
     def __init__(self, attribute):
         self.attribute = attribute
 
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''Alex Martelli, order preserving. 
         Found at http://www.peterbe.com/plog/uniqifiers-benchmark
 

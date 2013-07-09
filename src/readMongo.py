@@ -1,6 +1,8 @@
 import pymongo
 import re
 
+import basegenerator
+
 def convert_query(query):
     '''Converts a mongolito query to a MongoDB query, which is very similar.
     It basically replaces values that are lists with a $in query operator.
@@ -17,7 +19,7 @@ def convert_query(query):
     return result
     
 
-class MongoReader(object):
+class MongoReader(basegenerator.BaseGenerator):
 
     def __init__(self, host, database, collection):
         self.host = host
@@ -56,9 +58,10 @@ class MongoReader(object):
         #need to exist before hand.
         #That's a good thing, right ?
         self.collection = connection[self.database][self.collection]
+        return self
 
     def disconnect(self):
-        pass
+        return self
 
     @staticmethod
     def create(args):
@@ -131,17 +134,6 @@ class MongoReader(object):
         return query
 
 
-        
-    def get_attribute(self, query={}, attribute = 'dn', error=KeyError):
-        '''Returns an iterator over a single attribute from a search'''
-        for ldapobject in self.search(query, [attribute]):
-            try:
-                yield ldapobject[attribute]
-            except KeyError as ke:
-                if error is not None:
-                    raise ke
-
-
     def search(self, query = {}, attributes=[]):
         '''Thin wrapper over pymongo.collection.find'''
 
@@ -163,6 +155,13 @@ class MongoReader(object):
         #And sort children by rdn
         cursor = cursor.sort('mongolito.rdn', pymongo.ASCENDING)
 
-        #The cursor is already iterable, return it
-        return cursor
+        #The cursor is already iterable, but this method must be
+        #iterable itself. This could have worked (and has for some
+        #time)
+        #return cursor
+        #But now that the search method must return a generator, 
+        #I make the yield call myself
+        for document in cursor:
+            #Will return a generator object
+            yield document
 

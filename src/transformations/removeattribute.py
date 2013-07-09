@@ -12,7 +12,7 @@ class RemoveAttribute(BaseTransformation):
         '''
         self.attribute = attribute
  
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
             try:
                 del ldapobject[self.attribute]
             except KeyError:

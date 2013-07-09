@@ -27,7 +27,7 @@ class MergeAttributes(BaseTransformation):
             raise TypeError('Need at least one other attribute for a merge')
 
  
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         try:
             #Assume we will end up with a multi-value (which is likely)
             #Makes the code easier to read, and we will fix it before exiting
@@ -54,4 +54,4 @@ class MergeAttributes(BaseTransformation):
             pass
 
         #Reuse
-        return MakeValuesUnique(self.attribute).transform(ldapobject)
+        return MakeValuesUnique(self.attribute).transform(original, ldapobject)

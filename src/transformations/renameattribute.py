@@ -21,7 +21,7 @@ class RenameAttribute(BaseTransformation):
         self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
         self.replacement = replacement
  
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''

@@ -9,7 +9,7 @@ class ChangeType(BaseTransformation):
         self.operation = operation
         self.attribute = attribute
  
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''
         Adds attributes for replace
         '''

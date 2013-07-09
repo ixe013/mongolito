@@ -39,10 +39,10 @@ class LDIFReader(basegenerator.BaseGenerator):
         return parser
 
     def connect(self):
-        pass
+        return self
 
     def disconnect(self):
-        pass
+        return self
 
     @staticmethod
     def create(args):

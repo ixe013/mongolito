@@ -22,7 +22,7 @@ class RemoveValue(BaseTransformation):
         self.attribute = attribute
         self.pattern = re.compile(utils.pattern_from_javascript(value), flags=re.IGNORECASE)
  
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''

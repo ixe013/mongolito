@@ -66,10 +66,10 @@ class MongoWriter(object):
         return value
 
     def connect(self):
-        pass
+        return self
  
     def disconnect(self):
-        pass
+        return self
  
     def write(self, original, ldapobject):
         '''Saves the ldapobject in a Mongo database
@@ -85,10 +85,12 @@ class MongoWriter(object):
             #Insert private metadata that we will use later
             #The mongolito.parent field allows to sort results so that
             #parents are always created first
+            
+            #FIXME : metadata should be centralised and generated regardless of source
             ldapobject['mongolito'] = { 'parent':utils.compute_parent(ldapobject['dn']) ,
                                         'path':utils.compute_path(ldapobject['dn']) ,
                                       }
-
+            
             #Best effort guess to choose a rdn : first of cn or uid
             try:
                 ldapobject['mongolito']['rdn'] = ldapobject['cn'].lower()

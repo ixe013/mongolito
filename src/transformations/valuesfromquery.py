@@ -68,7 +68,7 @@ class ValuesFromQuery(BaseTransformation):
 
         return results
         
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''
         :ldapobject a dictionary reprenting one entry
         '''
@@ -99,5 +99,4 @@ class ValuesFromQuery(BaseTransformation):
 
         #Return the object, possibly modified                
         return ldapobject
- 
 

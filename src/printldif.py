@@ -86,6 +86,12 @@ class LDIFPrinter(object):
         return LDIFPrinter(args.ldiffile, args.overwrite, args.dontwrap, args.dontencode)
 
 
+    def connect(self):
+        return self
+
+    def disconnect(self):
+        return self
+
     def comment(self, text):
         print >> self.ldiffile, '#', text
 

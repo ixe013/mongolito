@@ -14,7 +14,7 @@ class AddAttribute(BaseTransformation):
         self.attribute = attribute
         self.value = value
 
-    def transform(self, ldapobject):
+    def transform(self, original, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''
