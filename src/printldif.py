@@ -127,7 +127,7 @@ class LDIFPrinter(object):
             print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(attribute, separator, value))
 
 
-    def write(self, ldapobject):
+    def write(self, original, ldapobject):
         '''Prints a Python dict that represents a ldap object in a sorted matter
              dn is printed first
              objectclass is printed after, sorted
@@ -155,7 +155,6 @@ class LDIFPrinter(object):
                 if 'replace' in ldapobject:
                     attribute, separator, value = self.makePrintableAttributeAndValue('replace',ldapobject['replace'])
                     self.printAttributeAndValue(attribute, separator, value)
-<<<<<<< HEAD
                     del ldapobject['replace']
                 elif 'modify' in ldapobject:
                     attribute, separator, value = self.makePrintableAttributeAndValue('modify',ldapobject['modify'])
@@ -163,11 +162,6 @@ class LDIFPrinter(object):
                     del ldapobject['modify']
 
             del ldapobject['changetype']
-=======
-                elif 'modify' in ldapobject:
-                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',ldapobject['modify'])
-                    self.printAttributeAndValue(attribute, separator, value)
->>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
                     
         except KeyError:
             #This a changetype add, we add it

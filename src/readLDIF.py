@@ -16,13 +16,14 @@ Will produce the following Python dict :
  'cn':'hello',
  'description':'Just a test.' }
 '''
+import argparse
 import base64
 import importExceptions
-import argparse
+
+import basegenerator
 
 
-
-class LDIFReader(object): 
+class LDIFReader(basegenerator.BaseGenerator): 
     def __init__(self, ldiffile):
         self.ldiffile = ldiffile
 

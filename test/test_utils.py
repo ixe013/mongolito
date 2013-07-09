@@ -33,8 +33,6 @@ class ModuleTest(unittest.TestCase):
         #If we ever come back, we have our password
         self.assertTrue(len(str(generator)) == 4)
         
-<<<<<<< HEAD
-
     def testUnicodePasswordGenerator(self):
         generator = utils.RandomUnicodePasswordGenerator(len('newPassword'))
         
@@ -43,11 +41,9 @@ class ModuleTest(unittest.TestCase):
         #I only check the length
         self.assertEqual(len(encodedPassword), len('IgBuAGUAdwBQAGEAcwBzAHcAbwByAGQAIgA='))
         
-=======
     def testReversePath(self):
         self.assertEqual('ou=stuff,dc=example,dc=com', utils.reverse_path('DC=com,DC=example,OU=stuff'))
         self.assertEqual('dc=com', utils.reverse_path('DC=COM'))
->>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
 
     def testComputePath(self):
         self.assertEqual('dc=example,dc=com', utils.compute_path('OU=somewhere,DC=example,DC=com'))

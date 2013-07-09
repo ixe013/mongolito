@@ -65,8 +65,13 @@ class MongoWriter(object):
 
         return value
 
+    def connect(self):
+        pass
  
-    def write(self, ldapobject):
+    def disconnect(self):
+        pass
+ 
+    def write(self, original, ldapobject):
         '''Saves the ldapobject in a Mongo database
         '''
         #If there is a DN (should be, but we don't force it)

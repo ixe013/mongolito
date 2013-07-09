@@ -38,11 +38,8 @@ class LDAPReader(object):
         self.connection = LDAPObjectStream(uri)
 
         if ldap_url.urlscheme == 'ldaps':
-<<<<<<< HEAD
             #FIXME : Proper handling of certificate, or at least
             #FIXME : make the ignore a connection setting
-=======
->>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
             self.connection.set_option(ldap.OPT_REFERRALS, 0)
@@ -60,13 +57,8 @@ class LDAPReader(object):
     def create(args):
         return LDAPReader(args.uri)
 
-<<<<<<< HEAD
     def connect(self, user, password):
         self.connection.simple_bind_s(user, password)
-=======
-    def connect(self):
-        self.connection.simple_bind_s(self.user, self.password)
->>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
 
     def disconnect(self):
         try:

@@ -3,6 +3,7 @@
 This is some text about mongolito.
 """
 import argparse
+import copy
 import logging
 import sys
 import time
@@ -39,28 +40,74 @@ def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
 
 
-def process(source, query, attributes, transformations, output, progress=update_progress):
-    '''Somewhat generic loop. Could be refactored to filter, but
-    that would require to keep the list in memory.'''
+
+def process(istream, ostream, showprogress=True):
+    '''
+    This is the core routine for object transformation.
+    istream might be a tuple make of a query and a source or be an iterable
+    object by itself.
+
+    The ostream parameter is a list of 3-tuples:
+    (rules, output, undo)
+    Where rules is a list of transformation objects, ouput and undo are objects 
+    that has a write(dict) method. Undo can be None if no undo file is required.
+
+    '''
     num_objects = 0
 
-    pipeline = daisychain.Pipeline(transformations)
-
+    progress = update_progress
     #Eat progress if none is required
-    if progress is None:
+    if not showprogress :
         progress = lambda x: None
 
     try:
-        for ldapObject in pipeline(source.search(query, attributes)):
-            try:
-                #Remove the metadata
-                del ldapObject['mongolito']
-            except KeyError:
-                pass
-            output.write(insensitivedict.InsensitiveDict(ldapObject))
+        generator = istream[0].get_search_object(istream[1], istream[2])    
+    except AttributeError:
+        generator = istream
+
+    try:
+        for ldapobject in generator:
+            for rules, output, undo in ostream:
+                #The original ldapobject that will be sent to the methods must not be 
+                #modified. It is an interface contract, because technically speaking
+                #nothing will break if you do modify the original object. Using 
+                #ldapobject.deepcopy() here would enforce the interface contract, but
+                #but would slow down and consume more memory than needed. So I just 
+                #alias the variable for now. If needed, I can always add a .deepcopy()
+                #later
+                original = insensitivedict.InsensitiveDict(ldapobject)
+
+                #The object that we are working on must be deeply copied because
+                #anything can happen to it. This can be rather big in terms of 
+                #memory usage, when reading large groups for example, but since 
+                #we are only processing one object at a time, it wont take that
+                #much anyway
+                current = insensitivedict.InsensitiveDict(copy.deepcopy(ldapobject))    
+
+                for rule in rules:
+                    rule.transform(original, current)    
+
+                    try:
+                        #Remove the metadata
+                        del current['mongolito']
+                    except KeyError:
+                        #TODO warning if logging is info or debug
+                        pass
+
+                output.write(original, current)
+
+                if undo is not None:
+                    undo.write(original, current)
+
             num_objects += 1
             progress(num_objects)
 
+    except ValueError as ve:
+        #ostream parameter incorrect. Should be in the form rules, output, undo.
+        #rules is a list, output and undo support the write method. You can always
+        #use None for the undo function 
+        print >> sys.stderr, ve
+        
     #FIXME : Should make this polymorphic or better than catching Exception
     except importExceptions.LDIFParsingException as lpe:
         print >> sys.stderr, lpe
@@ -68,7 +115,7 @@ def process(source, query, attributes, transformations, output, progress=update_
     except UnicodeError as ue:
         print >> sys.stderr, ue
         
-    if num_objects > 0:
+    if showprogress and num_objects > 0:
         print >> sys.stderr, ' -- done'
 
     return num_objects
@@ -146,15 +193,11 @@ def initialize_logging():
 
 def main():
     source, destination = getSourceDestination()
-<<<<<<< HEAD
-    process(source, {}, [], [], destination)
-=======
 
     source.connect()
     destination.connect()
 
-    process(source, {}, [], destination)
->>>>>>> 90e81a9e3b3911710aa306c9787cfa6df54cf7cb
+    process((source, {}, []), [([], destination, None)])
 
     destination.disconnect()
     source.disconnect()
