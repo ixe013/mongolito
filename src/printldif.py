@@ -142,32 +142,34 @@ class LDIFPrinter(object):
            Hence any valid unsorted ldif will comme out the same way from this 
            method'''
 
+        working_copy = ldapobject.copy()
+
         #dn is always first
-        #print 'dn:', ldapobject['dn']
-        dn = ldapobject['dn'] 
+        #print 'dn:', working_copy['dn']
+        dn = working_copy['dn'] 
         attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
         self.printAttributeAndValue(attribute, separator, value)
 
         #Remove the attributes we already printed
-        del ldapobject['dn']
+        del working_copy['dn']
         
         #Change type handling
         try:
-            change = ldapobject['changetype']
+            change = working_copy['changetype']
             attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
             self.printAttributeAndValue(attribute, separator, value)
 
             if change == 'modify':
-                if 'replace' in ldapobject:
-                    attribute, separator, value = self.makePrintableAttributeAndValue('replace',ldapobject['replace'])
+                if 'replace' in working_copy:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('replace',working_copy['replace'])
                     self.printAttributeAndValue(attribute, separator, value)
-                    del ldapobject['replace']
-                elif 'modify' in ldapobject:
-                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',ldapobject['modify'])
+                    del working_copy['replace']
+                elif 'modify' in working_copy:
+                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',working_copy['modify'])
                     self.printAttributeAndValue(attribute, separator, value)
-                    del ldapobject['modify']
+                    del working_copy['modify']
 
-            del ldapobject['changetype']
+            del working_copy['changetype']
                     
         except KeyError:
             #This a changetype add, we add it
@@ -177,7 +179,7 @@ class LDIFPrinter(object):
 
         #Now with the object classes
         try:
-            objectclasses = ldapobject['objectclass']
+            objectclasses = working_copy['objectclass']
 
             if isinstance(objectclasses, basestring):
                 objectclasses = [objectclasses]
@@ -185,7 +187,7 @@ class LDIFPrinter(object):
             for objclass in sorted(objectclasses):
                 attribute, separator, value = self.makePrintableAttributeAndValue('objectclass',objclass)
                 self.printAttributeAndValue(attribute, separator, value)
-            del ldapobject['objectclass']
+            del working_copy['objectclass']
         except KeyError:
             #object class is not mandatory
             pass
@@ -193,16 +195,16 @@ class LDIFPrinter(object):
         large_attributes = {}
 
         #This loops prints what is left
-        for name in sorted(ldapobject.keys()):
+        for name in sorted(working_copy.keys()):
             #Must check type instead of begging for forgiveness
             #because string is iterable but will not produce the
             #output we are looking for
-            if isinstance(ldapobject[name], basestring):
-                attribute, separator, value = self.makePrintableAttributeAndValue(name,ldapobject[name])
+            if isinstance(working_copy[name], basestring):
+                attribute, separator, value = self.makePrintableAttributeAndValue(name,working_copy[name])
                 self.printAttributeAndValue(attribute, separator, value)
             else:
                 #Print values prefixed with attribute name, sorted, unique
-                values = sorted(set(ldapobject[name]))
+                values = sorted(set(working_copy[name]))
 
                 #Only so many attributes can fit in a LDIF record
                 #TODO Put back the test of chunked values

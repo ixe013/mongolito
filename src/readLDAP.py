@@ -1,3 +1,4 @@
+import copy
 import ldap
 import ldap.resiter
 import ldapurl
@@ -23,12 +24,13 @@ def convert_raw_ldap_result(dn, raw):
         
 class LDAPReader(object):
 
-    def __init__(self, uri):
+    def __init__(self, uri, serverctrls=None):
         #FIXME : try and handle ValueError ?
         ldap_url = ldapurl.LDAPUrl(uri)
 
         #Will be use to understand queries with mongolito metadata later
         self.base = ldap_url.dn
+        self.serverctrls = serverctrls
 
         #Encoding is not automatic, for some reason
         regex = re.compile("^<(.*)>(.*)<(.*)>$")
@@ -163,10 +165,10 @@ class LDAPReader(object):
 
 
     def search(self, query = {}, attributes=[]):
-        base, query = self.convert_query(query)
+        base, query = self.convert_query(copy.deepcopy(query))
 
         #Async search
-        msg_id = self.connection.search(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes)
+        msg_id = self.connection.search_ext(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes, serverctrls=self.serverctrls)
 
         #allresults is a generator
         for res_type,res_data,res_msgid,res_controls in self.connection.allresults(msg_id):

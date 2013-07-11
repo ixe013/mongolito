@@ -85,12 +85,12 @@ def process(istream, ostream, showprogress=True):
                 for rule in rules:
                     rule.transform(original, current)    
 
-                    try:
-                        #Remove the metadata
-                        del current['mongolito']
-                    except KeyError:
-                        #TODO warning if logging is info or debug
-                        pass
+                try:
+                    #Remove the metadata
+                    del current['mongolito']
+                except KeyError:
+                    #TODO warning if logging is info or debug
+                    pass
 
                 output.write(original, current)
 

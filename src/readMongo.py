@@ -1,3 +1,4 @@
+import copy
 import pymongo
 import re
 
@@ -138,7 +139,7 @@ class MongoReader(basegenerator.BaseGenerator):
         '''Thin wrapper over pymongo.collection.find'''
 
         #Create the query from the syntaxic sugar
-        query = MongoReader.convert_embeeded_regex(query)
+        working_copy = MongoReader.convert_embeeded_regex(copy.deepcopy(query))
         
         #We always remove the _id field.
         projection = {'_id':0 }
@@ -149,7 +150,7 @@ class MongoReader(basegenerator.BaseGenerator):
         projection.update(dict.fromkeys(attributes, 1))
 
         #Remove the MongoDB _id and all of our metadata
-        cursor = self.collection.find(query, projection)
+        cursor = self.collection.find(working_copy, projection)
         #Sort so that parent show before their childrens
         cursor = cursor.sort('mongolito.parent', pymongo.ASCENDING)
         #And sort children by rdn
