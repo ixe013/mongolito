@@ -1,11 +1,67 @@
 import copy
 import ldap
-import ldap.resiter
+from ldap.controls import SimplePagedResultsControl
 import ldapurl
 import re
 import utils
 
-class LDAPObjectStream(ldap.ldapobject.LDAPObject, ldap.resiter.ResultProcessor):
+class PagedResultsGenerator(object):
+    def paged_search_ext_s(self,base,scope,filterstr='(objectClass=*)',attrlist=None,attrsonly=0,serverctrls=None,clientctrls=None,timeout=-1,sizelimit=0, page_size=1000):
+        """
+        Behaves exactly like LDAPObject.search_ext_s() but internally uses the
+        simple paged results control to retrieve search results in chunks.
+        
+        Taken on 2013-07-10 from : 
+        https://bitbucket.org/jaraco/python-ldap/src/f208b6338a28/Demo/paged_search_ext_s.py
+        Converted to a generator
+        
+        """
+        req_ctrl = SimplePagedResultsControl(True,size=page_size,cookie='')
+      
+        # Send first search request
+        msgid = self.search_ext(
+          base,
+          scope,
+          filterstr=filterstr,
+          attrlist=attrlist,
+          attrsonly=attrsonly,
+          serverctrls=(serverctrls or [])+[req_ctrl],
+          clientctrls=clientctrls,
+          timeout=timeout,
+          sizelimit=sizelimit
+        )
+        
+        while True:
+            rtype, rdata, rmsgid, rctrls = self.result3(msgid)
+            #all_results.extend(rdata)
+            for r in rdata:
+                yield r
+          
+            # Extract the simple paged results response control
+            pctrls = [
+                c
+                for c in rctrls
+                if c.controlType == SimplePagedResultsControl.controlType
+            ]
+            if pctrls:
+                if pctrls[0].cookie:
+                    # Copy cookie from response control to request control
+                    req_ctrl.cookie = pctrls[0].cookie
+                    msgid = self.search_ext(
+                        base,
+                        scope,
+                        filterstr=filterstr,
+                        attrlist=attrlist,
+                        attrsonly=attrsonly,
+                        serverctrls=(serverctrls or [])+[req_ctrl],
+                        clientctrls=clientctrls,
+                        timeout=timeout,
+                        sizelimit=sizelimit
+                    )
+                else:
+                    break
+
+class LDAPObjectStream(ldap.ldapobject.LDAPObject, PagedResultsGenerator):
     pass
 
 def convert_raw_ldap_result(dn, raw):
@@ -167,12 +223,10 @@ class LDAPReader(object):
     def search(self, query = {}, attributes=[]):
         base, query = self.convert_query(copy.deepcopy(query))
 
-        #Async search
-        msg_id = self.connection.search_ext(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes, serverctrls=self.serverctrls)
+        #Async paged search
+        result_generator = self.connection.paged_search_ext_s(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes, serverctrls=self.serverctrls)
 
-        #allresults is a generator
-        for res_type,res_data,res_msgid,res_controls in self.connection.allresults(msg_id):
-            for dn,entry in res_data:
-                # process dn and entry
-                yield convert_raw_ldap_result(dn, entry)
+        for dn,entry in result_generator:
+            # process dn and entry
+            yield convert_raw_ldap_result(dn, entry)
        
