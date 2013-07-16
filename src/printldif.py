@@ -1,5 +1,6 @@
 import argparse
 import base64
+import os
 import string
 import textwrap
 
@@ -47,49 +48,23 @@ def RFC2849WrappedOuput(attribute, separator, value):
 
 
 class LDIFPrinter(object):
-    def __init__(self, ldiffile, overwrite, dontwrap, dontencode):
+    def __init__(self, ldiffile, overwrite=True, dontwrap=True, dontencode=False):
         self.ldiffile = ldiffile
         self.dontwrap = dontwrap
         self.dontencode = dontencode
-
-        if overwrite:
-            self.ldiffile.truncate(0)
-        
-        
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Writes objects in LDIF format')
-        group.add_argument("-l",
-                          "--ldif", dest="ldiffile",
-                          type=argparse.FileType('a'),
-                          help="The LDIF file to write to (append mode, unless --overwrite is specified). Use - for stdout")
-
-        group.add_argument("-w",
-                          "--overwrite", dest="overwrite",
-                          action='store_true',
-                          help="Will overwrite the destination if it exists")
-
-        group.add_argument("-r",
-                          "--dontwrap", dest="dontwrap",
-                          action='store_true',
-                          help="Will not wrap lines longer than 76 chars.")
-
-        group.add_argument("-6",
-                          "--dontencode", dest="dontencode",
-                          action='store_true',
-                          help="Do not base64 encode strings that a non-ascii caracters in them (will output utf-8 instead).")
-
-        return parser
-
-    @staticmethod
-    def create(args):
-        return LDIFPrinter(args.ldiffile, args.overwrite, args.dontwrap, args.dontencode)
+        self.overwrite = overwrite
 
 
     def connect(self):
+        self.ldiffile = open(self.ldiffile, 'a')
+
+        if self.overwrite:
+            self.ldiffile.truncate(0)
+        
         return self
 
     def disconnect(self):
+        self.ldiffile.close()
         return self
 
     def comment(self, text):
@@ -159,7 +134,11 @@ class LDIFPrinter(object):
             attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
             self.printAttributeAndValue(attribute, separator, value)
 
+            del working_copy['changetype']
+
             if change == 'modify':
+                #If changetype is modify, then we have an attribute 
+                #that is either replace, modify or delete
                 if 'replace' in working_copy:
                     attribute, separator, value = self.makePrintableAttributeAndValue('replace',working_copy['replace'])
                     self.printAttributeAndValue(attribute, separator, value)
@@ -168,8 +147,11 @@ class LDIFPrinter(object):
                     attribute, separator, value = self.makePrintableAttributeAndValue('modify',working_copy['modify'])
                     self.printAttributeAndValue(attribute, separator, value)
                     del working_copy['modify']
-
-            del working_copy['changetype']
+            elif change == 'delete':
+                #For a changetype delete, no other attributes are needed. The delete statement is
+                #already printed, so the only thing left to do is to remove all other attributes
+                #and let an empty dict fall through the code
+                working_copy = {}
                     
         except KeyError:
             #This a changetype add, we add it
@@ -249,3 +231,24 @@ class LDIFPrinter(object):
                 
                 next_chunk += CHUNK_MAX_VALUES
                 
+
+def create_from_uri(uri):
+    '''
+    Factory for LDIFPrinter
+    '''    
+    result = None
+    
+    root, ext = os.path.splitext(uri)
+
+    if ext.lower() in ['.ldif', '.ldf']:
+        result = LDIFPrinter(uri)
+
+    return result
+
+def create_undo_from_uri(uri):
+    '''
+    Factory for LDIFPrinter that writes to an undo file. Undo files
+    can have any extension
+    '''    
+    return LDIFPrinter(uri)
+

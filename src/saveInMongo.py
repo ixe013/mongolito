@@ -26,32 +26,6 @@ class MongoWriter(object):
         self.collection = connection[database][collection]
 
 
-    @staticmethod
-    def create(args):
-        return MongoWriter(args.mongoHost, args.database, args.collection)
-
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Import in a MongoDB database')
-        group.add_argument("-m",
-                          "--mongo", dest="mongoHost",
-                          default=None,
-                          help="Use a MongoDB to store the results")
-         
-        #Same names as mongoimport
-        group.add_argument("-d",
-                          "--db", dest="database",
-                          default='test',
-                          help="The MongoDB database to use")
-         
-        #Same names as mongoimport
-        group.add_argument("-c",
-                          "--collection", dest="collection",
-                          default='mongolito',
-                          help="The MongoDB collection to use")
-
-        return parser
-
     def convert_to_mongo_datatype(self, value):
         '''Makes sure that value(s) are in a datatype that Mongo will accept.
 
@@ -124,4 +98,36 @@ class MongoWriter(object):
         except bson.errors.InvalidStringData:
             raise SaveException(-1, ldapobject['dn'], 'Object has a value that is not properly encoded')
 
+
+def create_from_uri(uri):
+    '''Creates an instance from a named URI. The format is key value pair,
+    where the key is the name this input or output will be refered to, and
+    the value is a valid MongoDB connection string, as described here :
+    http://docs.mongodb.org/manual/reference/connection-string/        
+
+    (The name is extracted by the main loop, it is passed separatly)
+
+    '''
+    result = None
+
+    try:
+        import pymongo
+
+        parsed_uri = pymongo.uri_parser.parse_uri(uri)
+
+        node = parsed_uri['nodelist'][0]
+
+        result = MongoWriter('{0}:{1}'.format(node[0], node[1]), parsed_uri['database'], name)
+
+    except ImportError:
+        #PyMongo is not installed
+        #TODO LOG Warning !!!
+        pass
+
+    except pymongo.errors.InvalidURI:
+        #Not for us or malformed
+        #TODO LOG Information or debug
+        pass
+    
+    return result
 

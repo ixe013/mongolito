@@ -11,36 +11,24 @@ class RenameAttribute(BaseTransformation):
     groups can be used.
     '''
  
-    def __init__(self, pattern, replacement):
+    def __init__(self, attribute, replacement):
         '''
         >>>renamer = RenameAttribute('(.*)bar', r'blah\1')
 
         :pattern A valid PCRE pattern
         :replacement A string (than can refer to the pattern with expression groups)
         '''
-        self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
+        self.attribute = attribute
         self.replacement = replacement
  
     def transform(self, original, ldapobject):
-        '''
-        :data a dictionary reprenting one entry
-        '''
-        #FIXME : regular expression looks overkill... code would be 
-        #simpler and use less memory if a simple text based renamed
-        #was used. The dict is already case insensitive anyway...
-
-        #Copy over to a new dict is easier
-        transformed = {}
-    
-        #For each key value pair in the orginal dict
-        for attribute,value in ldapobject.iteritems():
-            #Save a transformed key value pair.
-            #Values (even complex ones) are untouched
-            #re.sub will not change attribute names that don't match
-            #Does not check if a key with the same name already 
-            #exists or try to merge with it
-            transformed[re.sub(self.pattern, self.replacement, attribute)] = value
+        try:
+            ldapobject[self.replacement] = ldapobject[self.attribute]
+            del ldapobject[self.attribute]
+        except KeyError:
+            #Attribute does not exist in this dict
+            pass
 
         #Return the new object                
-        return transformed
+        return ldapobject
  

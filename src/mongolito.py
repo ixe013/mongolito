@@ -9,7 +9,9 @@ import sys
 import time
 
 import insensitivedict
+import readCSV
 import readLDIF
+import readLDAP
 import readMongo
 import printldif
 import saveInMongo
@@ -17,20 +19,14 @@ import transformations.errors
 
 
 def addArguments(parser):
-    parser.add_argument("-i",
-                      "--input", dest="inputType",
-                      choices=['ldif','mongo'],
-                      help="The source or format of record(s) to transform.")
+    parser.add_argument("-i", "--input", default='stdin',
+                      help="The source URI (file name, ldap or mongo URI) of record(s) to transform. Defaults to read LDIF from stdin")
 
-    parser.add_argument("-o",
-                      "--output", dest="outputType",
-                      choices=['ldif','mongo'],
-                      help="The destination and format of transformed record(s).")
+    parser.add_argument("-o", "--output", default='stdout',
+                      help="The destination URI (file name, ldap or mongo URI) of transformed record(s). Defaults to ouput LDIF to stdout")
 
-    parser.add_argument("-q",
-                      "--quiet", dest="quiet",
-                      action='store_true',
-                      help="Do not display progress.")
+    parser.add_argument("-z", "--undo",
+                      help="The undo file name. The same output class as output will be used.")
 
     return parser
 
@@ -96,6 +92,9 @@ def process(istream, ostream, showprogress=True):
                     output.write(original, current)
 
                     if undo is not None:
+                        #FIXME : This should be a dict difference, enabling true CRUD undo
+                        current['changetype'] = 'delete'
+                        #but this single line works in most scenarios
                         undo.write(original, current)
 
                 except transformations.errors.SkipObjectException:
@@ -137,34 +136,48 @@ def createArgumentParser():
     return parser
 
 
-def getInputClass(args):
-    '''Creates a source object, sending the arguments object 
-    to it so that it can configure itself '''
-    inputSource = None
+def get_input_object(uri):
+    '''
+    Creates a source object, sending the arguments object 
+    to it so that it can configure itself 
+    '''
+    input_modules = [
+        readLDIF,
+        readMongo,
+        readLDAP,
+        readCSV,
+    ]
 
-    #Returns the class to use
-    if args.inputType == 'ldif':
-        #LDIF input, create and configure
-        inputSource = readLDIF.LDIFReader
-    elif args.inputType == 'mongo':
-        #Mongodb input, create and configure
-        inputSource = readMongo.MongoReader
+    input_object = None
 
-    return inputSource
+    for module in input_modules:
+        input_object = module.create_from_uri(uri)
+        if input_object is not None:
+            break
+        
+    return input_object
 
 
-def getOutputClass(args):
-    '''Creates a destination object, sending the arguments object 
-    to it so that it can configure itself '''
-    destination = None
-
-    #Create the proper output object
-    if args.outputType == 'ldif':
-        destination = printldif.LDIFPrinter
-    elif args.outputType == 'mongo':
-        destination = saveInMongo.MongoWriter
+def get_output_and_undo_object(output_uri, undo_uri):
+    '''
+    Creates a destination object, sending the arguments object 
+    to it so that it can configure itself 
+    '''
+    output_modules = [
+        printldif,
+        saveInMongo,
+    ]
     
-    return destination
+    output_object = None
+    undo_object = None
+
+    for module in output_modules:
+        output_object = module.create_from_uri(output_uri)
+        if output_object is not None:
+            undo_object = module.create_undo_from_uri(undo_uri)
+            break
+
+    return output_object, undo_object
 
     
 def getSourceDestination():
@@ -175,30 +188,20 @@ def getSourceDestination():
 
     #Start with the top level argument group, which will
     #tell which end talks to which other end
-    args, other_args = parser.parse_known_args()
+    args = parser.parse_args()
 
     #Create both end of the process
-    source = getInputClass(args)
-    destination = getOutputClass(args)
-
-    #Ask each end to add their arguments
-    parser = source.addArguments(parser)
-    parser = destination.addArguments(parser)
-
-    #Retreive the values for the new arguments
-    args = parser.parse_args(other_args)
-
-    if args.quiet:
-        update_progress = lambda x: None
+    source = get_input_object(args.input)
+    destination, undo = get_output_and_undo_object(args.output, args.undo)
 
     #FIXME clients have to call connect and disconnect. Is that bad ?
-    return source.create(args), destination.create(args)
+    return source, destination, undo
     
 def initialize_logging():
     logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'), level=logging.INFO)    
 
 def main():
-    source, destination = getSourceDestination()
+    source, destination, undo = getSourceDestinationClasses()
 
     source.connect()
     destination.connect()

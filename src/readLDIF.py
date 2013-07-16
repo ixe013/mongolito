@@ -8,7 +8,7 @@ Example : The following ldif fragment
    objectClass: top
    objectClass: user
    cn: hello
-   description: SnVzdGF0ZXN0Lg==
+   description:: SnVzdGF0ZXN0Lg==
 
 Will produce the following Python dict :
 { 'dn':'cn=hello',
@@ -16,9 +16,9 @@ Will produce the following Python dict :
  'cn':'hello',
  'description':'Just a test.' }
 '''
-import argparse
 import base64
 import transformations.errors
+import os
 
 import basegenerator
 
@@ -27,26 +27,17 @@ class LDIFReader(basegenerator.BaseGenerator):
     def __init__(self, ldiffile):
         self.ldiffile = ldiffile
 
-
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Import LDIF file')
-        group.add_argument("-l",
-                          "--ldif", dest="ldiffile",
-                          type=argparse.FileType('r'),
-                          help="The LDIF file to import. Use - for stdin")
-
-        return parser
-
     def connect(self):
+        if self.ldiffile == 'stdin':
+            self.ldiffile = sys.stdin
+        else:
+            self.ldiffile = open(self.ldiffile, 'r')
+
         return self
 
     def disconnect(self):
+        self.ldiffile.close()
         return self
-
-    @staticmethod
-    def create(args):
-        return LDIFReader(args.ldiffile)
 
     def search(self, query = {}, attributes=[]):
         #The line count is there just to put in the Exception record if something
@@ -210,9 +201,15 @@ def convertLDIFFragment(fragment):
     return ldapObject
         
 
-def ldifInputFormat(args):
-    '''This generator pulls strings from the input_stream until a terminating
-    blank line is found'''
 
+def create_from_uri(uri):
+    
+    result = None
+    
+    root, ext = os.path.splitext(uri)
 
+    if uri == 'stdin' or ext.lower() in ['.ldif', '.ldf']:
+        result = LDIFReader(uri)
+
+    return result
 
