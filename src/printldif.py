@@ -1,5 +1,6 @@
 import argparse
 import base64
+import os
 import string
 import textwrap
 
@@ -55,36 +56,6 @@ class LDIFPrinter(object):
         if overwrite:
             self.ldiffile.truncate(0)
         
-        
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Writes objects in LDIF format')
-        group.add_argument("-l",
-                          "--ldif", dest="ldiffile",
-                          type=argparse.FileType('a'),
-                          help="The LDIF file to write to (append mode, unless --overwrite is specified). Use - for stdout")
-
-        group.add_argument("-w",
-                          "--overwrite", dest="overwrite",
-                          action='store_true',
-                          help="Will overwrite the destination if it exists")
-
-        group.add_argument("-r",
-                          "--dontwrap", dest="dontwrap",
-                          action='store_true',
-                          help="Will not wrap lines longer than 76 chars.")
-
-        group.add_argument("-6",
-                          "--dontencode", dest="dontencode",
-                          action='store_true',
-                          help="Do not base64 encode strings that a non-ascii caracters in them (will output utf-8 instead).")
-
-        return parser
-
-    @staticmethod
-    def create(args):
-        return LDIFPrinter(args.ldiffile, args.overwrite, args.dontwrap, args.dontencode)
-
 
     def connect(self):
         return self
@@ -249,3 +220,15 @@ class LDIFPrinter(object):
                 
                 next_chunk += CHUNK_MAX_VALUES
                 
+
+def create_from_uri(uri):
+    
+    result = None
+    
+    root, ext = os.path.splitext(uri)
+
+    if ext.lower() in ['.ldif', '.ldf']:
+        result = LDIFPrinter(uri)
+
+    return result
+

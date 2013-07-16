@@ -4,6 +4,7 @@ import re
 
 import basegenerator
 
+
 def convert_query(query):
     '''Converts a mongolito query to a MongoDB query, which is very similar.
     It basically replaces values that are lists with a $in query operator.
@@ -63,43 +64,6 @@ class MongoReader(basegenerator.BaseGenerator):
 
     def disconnect(self):
         return self
-
-    @staticmethod
-    def create(args):
-        return MongoReader(args.mongoHost, args.database, args.collection)
-
-
-    @staticmethod
-    def create_from_uri(name, uri):
-        '''Creates an instance from a named URI. The format is key value pair,
-        where the key is the name this input or output will be refered to, and
-        the value is a valid MongoDB connection string, as described here :
-        http://docs.mongodb.org/manual/reference/connection-string/        
-
-        (The name is extracted by the main loop, it is passed separatly)
-
-        '''
-        result = None
-        try:
-            import pymongo
-
-            parsed_uri = pymongo.uri_parser.parse_uri(uri)
-
-            node = parsed_uri['nodelist'][0]
-
-            result = MongoReader('{0}:{1}'.format(node[0], node[1]), parsed_uri['database'], name)
-
-        except ImportError:
-            #PyMongo is not installed
-            #TODO LOG Warning !!!
-            pass
-
-        except pymongo.errors.InvalidURI:
-            #Not for us or malformed
-            #TODO LOG Information or debug
-            pass
-        
-        return result
 
 
     @staticmethod
@@ -165,4 +129,37 @@ class MongoReader(basegenerator.BaseGenerator):
         for document in cursor:
             #Will return a generator object
             yield document
+
+
+def create_from_uri(uri):
+    '''Creates an instance from a named URI. The format is key value pair,
+    where the key is the name this input or output will be refered to, and
+    the value is a valid MongoDB connection string, as described here :
+    http://docs.mongodb.org/manual/reference/connection-string/        
+
+    (The name is extracted by the main loop, it is passed separatly)
+
+    '''
+    result = None
+
+    try:
+        import pymongo
+
+        parsed_uri = pymongo.uri_parser.parse_uri(uri)
+
+        node = parsed_uri['nodelist'][0]
+
+        result = MongoReader('{0}:{1}'.format(node[0], node[1]), parsed_uri['database'], name)
+
+    except ImportError:
+        #PyMongo is not installed
+        #TODO LOG Warning !!!
+        pass
+
+    except pymongo.errors.InvalidURI:
+        #Not for us or malformed
+        #TODO LOG Information or debug
+        pass
+    
+    return result
 

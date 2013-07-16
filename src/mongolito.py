@@ -9,7 +9,9 @@ import sys
 import time
 
 import insensitivedict
+import readCSV
 import readLDIF
+import readLDAP
 import readMongo
 import printldif
 import saveInMongo
@@ -17,20 +19,14 @@ import importExceptions
 
 
 def addArguments(parser):
-    parser.add_argument("-i",
-                      "--input", dest="inputType",
-                      choices=['ldif','mongo'],
-                      help="The source or format of record(s) to transform.")
+    parser.add_argument("-i", "--input", default='stdin',
+                      help="The source URI (file name, ldap or mongo URI) of record(s) to transform. Defaults to read LDIF from stdin")
 
-    parser.add_argument("-o",
-                      "--output", dest="outputType",
-                      choices=['ldif','mongo'],
-                      help="The destination and format of transformed record(s).")
+    parser.add_argument("-o", "--output", default='stdout',
+                      help="The destination URI (file name, ldap or mongo URI) of transformed record(s). Defaults to ouput LDIF to stdout")
 
-    parser.add_argument("-q",
-                      "--quiet", dest="quiet",
-                      action='store_true',
-                      help="Do not display progress.")
+    parser.add_argument("-z", "--undo",
+                      help="The undo file name. The same output class as output will be used.")
 
     return parser
 
@@ -131,34 +127,46 @@ def createArgumentParser():
     return parser
 
 
-def getInputClass(args):
-    '''Creates a source object, sending the arguments object 
-    to it so that it can configure itself '''
-    inputSource = None
+def getInputClass(uri):
+    '''
+    Creates a source object, sending the arguments object 
+    to it so that it can configure itself 
+    '''
+    input_modules = [
+        readLDIF,
+        readMongo,
+        readLDAP,
+        readCSV,
+    ]
 
-    #Returns the class to use
-    if args.inputType == 'ldif':
-        #LDIF input, create and configure
-        inputSource = readLDIF.LDIFReader
-    elif args.inputType == 'mongo':
-        #Mongodb input, create and configure
-        inputSource = readMongo.MongoReader
+    input_class = None
 
-    return inputSource
+    for cls in input_modules:
+        input_class = cls.create_from_uri(uri)
+        if input_class is not None:
+            break
+        
+    return input_class
 
 
-def getOutputClass(args):
-    '''Creates a destination object, sending the arguments object 
-    to it so that it can configure itself '''
-    destination = None
-
-    #Create the proper output object
-    if args.outputType == 'ldif':
-        destination = printldif.LDIFPrinter
-    elif args.outputType == 'mongo':
-        destination = saveInMongo.MongoWriter
+def getOutputClass(uri):
+    '''
+    Creates a destination object, sending the arguments object 
+    to it so that it can configure itself 
+    '''
+    output_modules = [
+        printldif,
+        saveInMongo,
+    ]
     
-    return destination
+    output_class = None
+
+    for cls in output_modules:
+        output_class = cls.create_from_uri(uri)
+        if output_class is not None:
+            break
+
+    return output_class
 
     
 def getSourceDestination():
@@ -169,24 +177,14 @@ def getSourceDestination():
 
     #Start with the top level argument group, which will
     #tell which end talks to which other end
-    args, other_args = parser.parse_known_args()
+    args = parser.parse_args()
 
     #Create both end of the process
-    source = getInputClass(args)
-    destination = getOutputClass(args)
-
-    #Ask each end to add their arguments
-    parser = source.addArguments(parser)
-    parser = destination.addArguments(parser)
-
-    #Retreive the values for the new arguments
-    args = parser.parse_args(other_args)
-
-    if args.quiet:
-        update_progress = lambda x: None
+    source = getInputClass(args.input)
+    destination = getOutputClass(args.output)
 
     #FIXME clients have to call connect and disconnect. Is that bad ?
-    return source.create(args), destination.create(args)
+    return source, destination
     
 def initialize_logging():
     logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'), level=logging.INFO)    

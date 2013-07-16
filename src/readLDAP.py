@@ -2,8 +2,12 @@ import copy
 import ldap
 from ldap.controls import SimplePagedResultsControl
 import ldapurl
-import re
+
+
+import basegenerator
 import utils
+
+__all__ = [ 'create_from_uri', 'LDAPReader']
 
 class PagedResultsGenerator(object):
     def paged_search_ext_s(self,base,scope,filterstr='(objectClass=*)',attrlist=None,attrsonly=0,serverctrls=None,clientctrls=None,timeout=-1,sizelimit=0, page_size=1000):
@@ -78,7 +82,7 @@ def convert_raw_ldap_result(dn, raw):
     return result
 
         
-class LDAPReader(object):
+class LDAPReader(basegenerator.BaseGenerator):
 
     def __init__(self, uri, serverctrls=None):
         #FIXME : try and handle ValueError ?
@@ -88,12 +92,7 @@ class LDAPReader(object):
         self.base = ldap_url.dn
         self.serverctrls = serverctrls
 
-        #Encoding is not automatic, for some reason
-        regex = re.compile("^<(.*)>(.*)<(.*)>$")
-        r = regex.search(ldap_url.htmlHREF())
-        uri = r.group(2)
-
-        self.connection = LDAPObjectStream(uri)
+        self.connection = LDAPObjectStream(ldap_url.unparse())
 
         if ldap_url.urlscheme == 'ldaps':
             #FIXME : Proper handling of certificate, or at least
@@ -107,13 +106,15 @@ class LDAPReader(object):
 
 
     @staticmethod
-    def addArguments(parser):
-        return parser
-
-
-    @staticmethod
     def create(args):
-        return LDAPReader(args.uri)
+        future_self = None
+
+        try:
+            future_self = LDAPReader(args.uri)
+        except ldap.LDAPError:
+            pass
+
+        return future_self
 
     def connect(self, user, password):
         self.connection.simple_bind_s(user, password)
@@ -129,33 +130,6 @@ class LDAPReader(object):
             pass
 
         return self
-
-    @staticmethod
-    def create_from_uri(name, uri):
-        '''Creates an instance from a named URI. The format is key value pair,
-        where the key is the name this input or output will be refered to, and
-        the value is a valid MongoDB connection string, as described here :
-        http://docs.mongodb.org/manual/reference/connection-string/        
-
-        '''
-        parsed_url = ldapurl.LDAPUrl(uri)
-
-        #Encoding is not automatic, for some reason
-        regex = re.compile("^<(.*)>(.*)<(.*)>$")
-        r = regex.search(parsed_url.htmlHREF())
-        uri = r.group(2)
-
-        return LDAPReader(uri)
-
-        
-    def get_attribute(self, query={}, attribute = 'dn', error=KeyError):
-        '''Returns an iterator over a single attribute from a search'''
-        for ldapobject in self.search(query, [attribute]):
-            try:
-                yield ldapobject[attribute]
-            except KeyError as ke:
-                if error is not None:
-                    raise ke
 
     def convert_query(self, query):
         result = ''
@@ -230,3 +204,22 @@ class LDAPReader(object):
             # process dn and entry
             yield convert_raw_ldap_result(dn, entry)
        
+
+def create_from_uri(uri):
+    '''Creates an instance from a named URI. The format is key value pair,
+    where the key is the name this input or output will be refered to, and
+    the value is a valid MongoDB connection string, as described here :
+    http://docs.mongodb.org/manual/reference/connection-string/        
+
+    '''
+    future_self = None
+
+    try:
+        #See http://stackoverflow.com/a/17667763/591064 for unparse
+        future_self = LDAPReader(ldapurl.LDAPUrl(uri).unparse())
+    except ValueError:
+        pass
+
+    return future_self
+
+

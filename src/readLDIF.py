@@ -18,35 +18,21 @@ Will produce the following Python dict :
 '''
 import argparse
 import base64
-import importExceptions
+import os
 
 import basegenerator
+import importExceptions
 
 
 class LDIFReader(basegenerator.BaseGenerator): 
     def __init__(self, ldiffile):
         self.ldiffile = ldiffile
 
-
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Import LDIF file')
-        group.add_argument("-l",
-                          "--ldif", dest="ldiffile",
-                          type=argparse.FileType('r'),
-                          help="The LDIF file to import. Use - for stdin")
-
-        return parser
-
     def connect(self):
         return self
 
     def disconnect(self):
         return self
-
-    @staticmethod
-    def create(args):
-        return LDIFReader(args.ldiffile)
 
     def search(self, query = {}, attributes=[]):
         #The line count is there just to put in the Exception record if something
@@ -210,9 +196,15 @@ def convertLDIFFragment(fragment):
     return ldapObject
         
 
-def ldifInputFormat(args):
-    '''This generator pulls strings from the input_stream until a terminating
-    blank line is found'''
 
+def create_from_uri(uri):
+    
+    result = None
+    
+    root, ext = os.path.splitext(uri)
 
+    if ext.lower() in ['.ldif', '.ldf']:
+        result = LDIFReader(uri)
+
+    return result
 
