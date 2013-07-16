@@ -1,3 +1,4 @@
+import copy
 import unittest
 
 import transformations
@@ -46,49 +47,53 @@ class ModuleTest(unittest.TestCase):
             'multi':['aaa','CCC','abracadabra'],
         }
 
+        current = copy.deepcopy(ldapobject)
+
         #No match
         remover = RemoveValue('single', '/c/')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
 
         #Match, remove attribute
         remover = RemoveValue('cute', '/c/')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
 
         #Match on multiple, ends up removing the attribute
         remover = RemoveValue('scary', '/c/')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
 
         #Match on some attribute, leaves a single valued attribute
         remover = RemoveValue('multi', '/c/')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
 
         expected = {
             'single':'Hello',
             'multi':'aaa',
         }
 
-        self.assertEquals(ldapobject, expected)
+        self.assertEquals(current, expected)
 
 
     def testAddAttribute(self):
         adder = AddAttribute('userPassword', 'coucou')
     
+        original = {}
         ldapobject = {}
 
         #Add the first attribute
-        adder.transform(ldapobject)
+        adder.transform(original, ldapobject)
         self.assertIn('userPassword', ldapobject.keys(), 'Attribute not found in dict')
         self.assertIsInstance(ldapobject['userPassword'], str, 'Attribute should be a string')
         self.assertEquals(ldapobject['userPassword'], 'coucou', 'Attribute value was not set properly.')
         
         #Make the attribute multi valued
-        adder.transform(ldapobject)
+        adder.transform(original, ldapobject)
         self.assertIsInstance(ldapobject['userPassword'], list, 'Attribute should be multi-valued')
 
         #Add to a multi-value
-        adder.transform(ldapobject)
+        adder.transform(original, ldapobject)
         self.assertIsInstance(ldapobject['userPassword'], list, 'Attribute should be multi-valued')
         self.assertTrue(len(ldapobject['userPassword']) == 3)
+
 
     def testMakeAttributesUnique(self):
         ldapobject = {
@@ -96,9 +101,11 @@ class ModuleTest(unittest.TestCase):
             'objectClass': [ 'top', 'person', 'top', 'top', 'person', 'top' ]
         }
 
+        original = copy.deepcopy(ldapobject)
+
         merger = MakeValuesUnique('objectClass')
 
-        ldapobject = merger.transform(ldapobject)
+        ldapobject = merger.transform(original, ldapobject)
 
         self.assertIsInstance(ldapobject['objectClass'], list, 'objectClass should still be multi valued')
         self.assertIn('top', ldapobject['objectClass'], 'objectClass top is gone')
@@ -108,14 +115,15 @@ class ModuleTest(unittest.TestCase):
 
         backup = ldapobject
 
-        merger.transform(ldapobject)
+        merger.transform(original, ldapobject)
         self.assertEquals(backup, ldapobject, 'merged object should not have changed')
         
 
         ldapobject['objectClass'] = [ 'top', 'top', 'top' ]
 
-        merger.transform(ldapobject)
+        merger.transform(original, ldapobject)
         self.assertIsInstance(ldapobject['objectClass'], str)
+
 
     def testCopyFirstValueOfAttribute(self):
         ldapobject = {
@@ -124,23 +132,25 @@ class ModuleTest(unittest.TestCase):
             'multi': ['1', '2']
         }
 
+        current = copy.deepcopy(ldapobject)
+
         copyer = CopyFirstValueOfAttribute('single', 'copied-from-single')
 
         #Copy single to none
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
         #Copy single to single
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
         #Copy single to multi
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
 
         copyer = CopyFirstValueOfAttribute('multi', 'copied-from-multi')
 
         #Copy first value of multi to none
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
         #Copy first value of multi to single
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
         #Copy first value of multi to multi
-        copyer.transform(ldapobject)
+        copyer.transform(ldapobject, current)
 
         expected = {
             'dn':'cn=coucou',
@@ -150,7 +160,7 @@ class ModuleTest(unittest.TestCase):
             'copied-from-multi': ['1', '1', '1' ]
         }
 
-        self.assertEqual(ldapobject, expected)
+        self.assertEqual(current, expected)
 
     def testCopyAttribute(self):
         ldapobject = {
@@ -159,11 +169,13 @@ class ModuleTest(unittest.TestCase):
             'multi': ['111','222','333'],
         }
 
+        current = copy.deepcopy(ldapobject)
+
         copier = CopyAttribute('single','single-copy')
-        copier.transform(ldapobject)
+        copier.transform(ldapobject, current)
 
         copier = CopyAttribute('multi','multi-copy')
-        copier.transform(ldapobject)
+        copier.transform(ldapobject, current)
 
         expected = {
             'dn':'cn=coucou',
@@ -173,7 +185,7 @@ class ModuleTest(unittest.TestCase):
             'multi-copy': ['111','222','333'],
         }
 
-        self.assertEqual(ldapobject,expected)
+        self.assertEqual(current,expected)
 
     def testRenameValue(self):
         ldapobject = {
@@ -184,21 +196,23 @@ class ModuleTest(unittest.TestCase):
             'untouched':'blah'
         }
         
+        current = copy.deepcopy(ldapobject)
+
         #Changing the DN propagates to the attribute that design the
         #first component
         renamer = RenameValue('dn', 'ou=people,ou=example,ou=com', r'ou=aliens,ou=example,ou=com')
-        renamer.transform(ldapobject)
+        renamer.transform(ldapobject, current)
 
         #Regular expression on a single value  a --> 4
         renamer = RenameValue('single', '/[a]/', '4')
-        renamer.transform(ldapobject)
+        renamer.transform(ldapobject, current)
 
         #Regular expression on a multi value  a --> 4
         renamer = RenameValue('multi', '/[a]/', '4')
-        renamer.transform(ldapobject)
+        renamer.transform(ldapobject, current)
 
         renamer = RenameValue('multi', '/[k]/', '|<')
-        renamer.transform(ldapobject)
+        renamer.transform(ldapobject, current)
 
         expected = {
             'dn':'ou=aliens,ou=example,ou=com',
@@ -208,7 +222,7 @@ class ModuleTest(unittest.TestCase):
             'untouched':'blah'
         }
 
-        self.assertEqual(expected, ldapobject)
+        self.assertEqual(expected, current)
 
     def testRenameAttribute(self):
         #TODO
@@ -221,32 +235,36 @@ class ModuleTest(unittest.TestCase):
             'multi': ['1', '2']
         }
 
+        current = copy.deepcopy(ldapobject)
+
         remover = RemoveAttribute('single')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
 
         remover = RemoveAttribute('multi')
-        remover.transform(ldapobject)
+        remover.transform(ldapobject, current)
  
         expected = {
             'dn':'cn=coucou',
         }
 
-        self.assertEqual(ldapobject, expected)
+        self.assertEqual(current, expected)
 
     def testJoinMultiValueAttribute(self):
         ldapobject = {
             'multi': ['1', '2', '3']
         }
 
+        current = copy.deepcopy(ldapobject)
+
         joiner = JoinMultiValueAttribute('multi',' - ', 'flat')
-        joiner.transform(ldapobject)
+        joiner.transform(ldapobject, current)
 
         expected = {
             'multi': ['1', '2', '3'],
             'flat': '1 - 2 - 3'
         }
 
-        self.assertEquals(ldapobject, expected)
+        self.assertEquals(current, expected)
 
     def testMergeAttributes(self):
         ldapobject = {
@@ -255,9 +273,11 @@ class ModuleTest(unittest.TestCase):
             'equivalentToMe':['john','doe'],
         }
 
+        original = copy.deepcopy(ldapobject)
+
         #Merge uniqueMember and equivalentToMe in member
         merger = MergeAttributes('member', 'uniqueMember', 'equivalentToMe')
-        merger.transform(ldapobject)
+        merger.transform(original, ldapobject)
 
         ldapobject['member'].sort()
 
@@ -277,11 +297,11 @@ class ModuleTest(unittest.TestCase):
 
         #Merge uniqueMember and equivalentToMe with existing member
         merger = MergeAttributes('member', 'uniqueMember', 'equivalentToMe', 'member')
-        merger.transform(ldapobject)
+        merger.transform(original, ldapobject)
 
         #In this trivial, merging attributes is like a rename
         merger = MergeAttributes('zzz', 'cn', 'does-not-exists')
-        merger.transform(ldapobject)
+        merger.transform(original, ldapobject)
 
         ldapobject['member'].sort()
 

@@ -13,7 +13,7 @@ import readLDIF
 import readMongo
 import printldif
 import saveInMongo
-import importExceptions
+import transformations.errors
 
 
 def addArguments(parser):
@@ -82,20 +82,26 @@ def process(istream, ostream, showprogress=True):
                 #much anyway
                 current = insensitivedict.InsensitiveDict(copy.deepcopy(ldapobject))    
 
-                for rule in rules:
-                    rule.transform(original, current)    
-
                 try:
-                    #Remove the metadata
-                    del current['mongolito']
-                except KeyError:
-                    #TODO warning if logging is info or debug
+                    for rule in rules:
+                        rule.transform(original, current)    
+
+                    try:
+                        #Remove the metadata
+                        del current['mongolito']
+                    except KeyError:
+                        #TODO warning if logging is info or debug
+                        pass
+
+                    output.write(original, current)
+
+                    if undo is not None:
+                        undo.write(original, current)
+
+                except transformations.errors.SkipObjectException:
+                    output.comment('Skipped {0}'.format(ldapobject['dn']))
+                    #TODO Warn in the logger or comment in the output
                     pass
-
-                output.write(original, current)
-
-                if undo is not None:
-                    undo.write(original, current)
 
             num_objects += 1
             progress(num_objects)
@@ -107,8 +113,8 @@ def process(istream, ostream, showprogress=True):
         print >> sys.stderr, ve
         
     #FIXME : Should make this polymorphic or better than catching Exception
-    except importExceptions.LDIFParsingException as lpe:
-        print >> sys.stderr, lpe
+    except transformations.errors.ParsingException as pe:
+        print >> sys.stderr, pe
 
     except UnicodeError as ue:
         print >> sys.stderr, ue

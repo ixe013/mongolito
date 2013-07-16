@@ -18,7 +18,7 @@ Will produce the following Python dict :
 '''
 import argparse
 import base64
-import importExceptions
+import transformations.errors
 
 import basegenerator
 
@@ -144,7 +144,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             lines[len(lines)-1] += line.strip()
 
         else:
-            raise importExceptions.LDIFParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
+            raise transformations.errors.ParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
 
         lastLineWasIgnored = False
 
