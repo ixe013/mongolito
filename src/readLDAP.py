@@ -116,8 +116,10 @@ class LDAPReader(basegenerator.BaseGenerator):
 
         return future_self
 
-    def connect(self, user, password):
+    def connect(self, user='', password=''):
         self.connection.simple_bind_s(user, password)
+        self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
+
         return self
 
     def disconnect(self):
@@ -150,14 +152,15 @@ class LDAPReader(basegenerator.BaseGenerator):
         #first the rdn
         try:
             rdn = query['mongolito.rdn']
-            result += '(|(cn={0})(uid={0})(ou={0}))'.format(rdn)
+            #FIXME : What if cn is not used (or replaced with uid?)
+            result += '(cn={0})'.format(rdn)
             del query['mongolito.rdn']
         except KeyError:
             pass
 
         #then the path
         try:
-            path = query['mongolito.path']
+            path = query['mongolito.parent']
             #'/^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic/',
             #'^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic',
             #We are replacing the base
@@ -166,7 +169,7 @@ class LDAPReader(basegenerator.BaseGenerator):
             #For now, we just use the path as the base (which we must flip). We also
             #ignore the leading ^, if present
             base = utils.reverse_path(utils.pattern_from_javascript(path).lstrip('^'))
-            del query['mongolito.path']
+            del query['mongolito.parent']
         except KeyError:
             pass
 

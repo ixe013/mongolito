@@ -1,6 +1,5 @@
 import base64
 import unittest
-import sys
 
 import utils
 
@@ -16,7 +15,7 @@ class ModuleTest(unittest.TestCase):
         str(generator)
         
         #Make 100 random passwords, all different
-        for n in xrange(0,100):
+        for _ in xrange(0,100):
             password = str(generator)
             self.assertNotIn(password, history)
             history.append(password)

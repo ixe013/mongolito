@@ -119,13 +119,6 @@ def process(istream, ostream, showprogress=True):
         print >> sys.stderr, ue
         
 
-def generate(istream, ostream):
-    def yielder(x):
-        yield x
-
-    for rules, output, undo in ostream:
-        process(istream, (rules, yielder, None))
-
 def createArgumentParser():
     '''Default argument parsing. Allows the developper to configure the 
     transformation engine along with their code'''
@@ -180,7 +173,7 @@ def get_output_and_undo_object(output_uri, undo_uri):
     return output_object, undo_object
 
     
-def getSourceDestination():
+def getSourceDestinationUndo():
     initialize_logging()
 
     '''Returns the source and destination object as a tuple'''
@@ -201,12 +194,12 @@ def initialize_logging():
     logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'), level=logging.INFO)    
 
 def main():
-    source, destination, undo = getSourceDestinationClasses()
+    source, destination, undo = getSourceDestinationUndo()
 
     source.connect()
     destination.connect()
 
-    process((source, {}, []), [([], destination, None)])
+    process((source, {}, []), [([], destination, undo)])
 
     destination.disconnect()
     source.disconnect()

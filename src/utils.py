@@ -1,8 +1,7 @@
 import base64
-import hashlib
 import random
 import string
-import sys
+
 
 def randomPassword(length):
     '''Quick random password generator with good entropy. 
@@ -30,7 +29,7 @@ def randomPassword(length):
 
     while True:
         #Generate N random numbers
-        premaster = ''.join([chr(random.randint(0,255)) for x in xrange(0,length)])
+        premaster = ''.join([chr(random.randint(0,255)) for _ in xrange(0,length)])
         #Base64 to get a large number of printable chars, adding special chars
         #which are missing from the base64 encoding
         master = base64.b64encode(premaster)+special
@@ -75,27 +74,26 @@ def makeUnicodePwd(pwd):
     return pwd.encode('utf-16')[2:]
 
 class RandomPasswordGenerator(str):
-     '''Behaves like a string, but returns a different somewhat random value
-     each time.
+    '''Behaves like a string, but returns a different somewhat random value
+    each time.
 
-     '''
-     def __init__(self, length=13):
+    '''
+    def __init__(self, length=13):
         self.length = length
         random.seed()
  
-     def __str__(self):
+    def __str__(self):
         return randomPassword(self.length)
     
 class RandomUnicodePasswordGenerator(str):
-     '''Behaves like a string, but returns a different somewhat random value
-     each time.
-
-     '''
-     def __init__(self, length=13):
+    '''Behaves like a string, but returns a different somewhat random value
+    each time.
+    '''
+    def __init__(self, length=13):
         self.length = length
         random.seed()
  
-     def __str__(self):
+    def __str__(self):
         return makeUnicodePwd(randomPassword(self.length))
 
 
@@ -151,8 +149,8 @@ def compute_parent(dn):
     return ','.join(components[:-1]).lower()
 
 def add_metadata(ldapobject, dn):
-    ldapobject['mongolito'] = { 'parent':utils.compute_parent(dn) ,
-                                'path':utils.compute_path(dn),
+    ldapobject['mongolito'] = { 'parent':compute_parent(dn) ,
+                                'path':compute_path(dn),
                               }
 
     #the RDN metadata is the value of the leftmost component. 

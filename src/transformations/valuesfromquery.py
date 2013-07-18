@@ -1,10 +1,9 @@
 import logging 
 import re
-import sys
 
 import utils
 
-from transformations import BaseTransformation
+from . import BaseTransformation
 
 #This is just to differentiate from an int
 #based value
@@ -16,7 +15,7 @@ class ValuesFromQuery(BaseTransformation):
     '''Renames a value with the result of a sub query
 
     '''
-    def __init__(self, attribute, pattern, query, source, selected='dn'):
+    def __init__(self, attribute, pattern, query, source, cache=False, selected='dn'):
         '''
         '''
         self.attribute = attribute
@@ -24,7 +23,21 @@ class ValuesFromQuery(BaseTransformation):
         self.query = query
         self.source = source
         self.selected = selected
- 
+
+        self.cache_enabled = False  #Cache default is OFF
+        self.cache = {}
+        
+        #Reusing an external cache is better
+        if isinstance(cache, dict):
+            self.cache_enabled = True
+            self.cache = cache
+        elif cache:
+            self.cache_enabled = True
+
+        self.cache['__hits'] = self.cache.get('__hits', 0)
+        self.cache['__miss'] = self.cache.get('__miss', 0)
+       
+
     def set_query_values(self, groups):
         #We must reverse lookup the fields to replace
         #in the query dict we received
@@ -38,6 +51,7 @@ class ValuesFromQuery(BaseTransformation):
                 query[key] = groups[param-1]
 
         return query
+
         
     def execute_query(self, attribute):
         '''Runs the sub query.
@@ -54,13 +68,35 @@ class ValuesFromQuery(BaseTransformation):
         match = self.pattern.search(attribute)
 
         if match:
-            #We must translate any place holders
-            query = self.set_query_values(match.groups())
+            values = match.groups()
+            results = []
 
-            #Build an array of values. Most of the time, only
-            #one result will be returned
-            results = [r for r in self.source.get_attribute(query, self.selected)]
-            
+            if self.cache_enabled:
+                #Prime the results with the cache 
+                results = [self.cache[key.lower()] for key in set(values) & set(self.cache)]
+                
+                self.cache['__hits'] += len(results)  
+
+                #Remove the values found in the cache
+                values = list(set(values) - set(self.cache))
+
+            #If there are values that were not found in the cache
+            if values:
+                #We must translate any place holders
+                query = self.set_query_values(values)
+
+                self.cache['__miss'] += len(values)  
+
+                #Build an array of values. Most of the time, only
+                #one result will be returned
+                new_results = [r for r in self.source.get_attribute(query, self.selected)]
+                
+                results.extend(new_results)
+
+                if self.cache_enabled:
+                    #Add the new results to the cache
+                    self.cache.update(dict(zip([v.lower() for v in values], new_results)))
+
             if not results:
                 logging.warn('{0} not found in subquery'.format(attribute))
         else:
