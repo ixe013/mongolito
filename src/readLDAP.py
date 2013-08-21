@@ -161,8 +161,6 @@ class LDAPReader(basegenerator.BaseGenerator):
         #then the path
         try:
             path = query['mongolito.parent']
-            #'/^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic/',
-            #'^c=ca,st=qc,o=hydro-quebec,ou=applications,ou=sap,ou=codes_applic',
             #We are replacing the base
             #Look at something along those lines
             #http://stackoverflow.com/a/14128905/591064

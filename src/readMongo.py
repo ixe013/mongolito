@@ -115,8 +115,6 @@ def create_from_uri(uri):
     the value is a valid MongoDB connection string, as described here :
     http://docs.mongodb.org/manual/reference/connection-string/        
 
-    (The name is extracted by the main loop, it is passed separatly)
-
     '''
     result = None
 
@@ -138,12 +136,11 @@ def create_from_uri(uri):
     except ImportError:
         #PyMongo is not installed
         #TODO LOG Warning !!!
-        pass
+        logging.debug('Pymongo not installed')
 
     except pymongo.errors.InvalidURI as iu:
         #Not for us or malformed
-        logging.error('Malformed mongo uri. See http://docs.mongodb.org/manual/reference/connection-string/')
-        raise iu
+        logging.debug('Malformed mongo uri. See http://docs.mongodb.org/manual/reference/connection-string/')
     
     return result
 
