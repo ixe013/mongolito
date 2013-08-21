@@ -60,21 +60,7 @@ class MongoWriter(object):
             #The mongolito.parent field allows to sort results so that
             #parents are always created first
             
-            #FIXME : metadata should be centralised and generated regardless of source
-            ldapobject['mongolito'] = { 'parent':utils.compute_parent(ldapobject['dn']) ,
-                                        'path':utils.compute_path(ldapobject['dn']) ,
-                                      }
-            
-            #Best effort guess to choose a rdn : first of cn or uid
-            try:
-                ldapobject['mongolito']['rdn'] = ldapobject['cn'].lower()
-            except KeyError:
-                try:
-                    ldapobject['mongolito']['rdn'] = ldapobject['uid'].lower()
-                except KeyError:
-                    #TODO use first component, like OU or DC?
-                    pass
-
+            utils.add_metadata(ldapobject, ldapobject['dn'])
             
             #I though there would be an implict conversion to dict, but
             #there is not. Let's make one.
@@ -113,7 +99,13 @@ def create_from_uri(uri):
     try:
         import pymongo
 
-        parsed_uri = pymongo.uri_parser.parse_uri(uri)
+        try:
+            mongo_uri, name = uri.rsplit('#',1)
+        except ValueError:
+            logging.error('Append the collection name at the end of the URI, with a #, like this: {0}#collection'.format(uri))
+            raise pymongo.errors.InvalidURI(uri)
+
+        parsed_uri = pymongo.uri_parser.parse_uri(mongo_uri)
 
         node = parsed_uri['nodelist'][0]
 
@@ -131,3 +123,6 @@ def create_from_uri(uri):
     
     return result
 
+def create_undo_from_uri(uri):
+    #TODO
+    return None
