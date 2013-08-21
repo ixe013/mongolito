@@ -75,9 +75,10 @@ class ValuesFromQuery(BaseTransformation):
                 #Prime the results with the cache 
                 results = [self.cache[key.lower()] for key in set(values) & set(self.cache)]
                 
+                #Add the count of object found to the hit count
                 self.cache['__hits'] += len(results)  
 
-                #Remove the values found in the cache
+                #Remove the values found in the cache from the values to query
                 values = list(set(values) - set(self.cache))
 
             #If there are values that were not found in the cache
@@ -97,12 +98,20 @@ class ValuesFromQuery(BaseTransformation):
                     #Add the new results to the cache
                     self.cache.update(dict(zip([v.lower() for v in values], new_results)))
 
+            #The subquery did not find anything
             if not results:
-                logging.warn('{0} not found in subquery'.format(attribute))
+                for v in values:
+                    #Cache the failure
+                    self.cache[v.lower()] = None
+                    logging.warn('{0} not found in subquery'.format(v))
+
         else:
+            #Return the original value untouched
             results = [attribute]
 
-        return results
+        #Filter out None (those mean that we have a cache 
+        #hit, but the subquery did not find anything)
+        return [x for x in results if x is not None]
         
     def transform(self, original, ldapobject):
         '''
