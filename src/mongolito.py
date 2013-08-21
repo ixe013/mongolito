@@ -89,9 +89,10 @@ def process(istream, ostream, showprogress=True):
                         #TODO warning if logging is info or debug
                         pass
 
-                    output.write(original, current)
+                    if output:
+                        output.write(original, current)
 
-                    if undo is not None:
+                    if undo:
                         #FIXME : This should be a dict difference, enabling true CRUD undo
                         current['changetype'] = 'delete'
                         #but this single line works in most scenarios
