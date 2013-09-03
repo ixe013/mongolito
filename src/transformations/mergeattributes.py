@@ -1,3 +1,5 @@
+import logging
+
 from transformations import BaseTransformation
 from transformations.makevaluesunique import MakeValuesUnique
 
@@ -14,10 +16,17 @@ class MergeAttributes(BaseTransformation):
         to the list of attribute to merge.
         
         >>>merger = MergeAttributes('member', 'equivalentToMe', 'uniqueMember')
+
+        If all of the attributes are empty, the merged attribute will be created 
+        and it will be empty. It is valid to merge an attribute with itself. 
+
         >>>merger = MergeAttributes('member', 'member', 'equivalentToMe', 'uniqueMember')
 
-        :attribute the name of the attribute to merge to
-        :attributes a variable lenght list of attribute names that must be merged
+        Args:
+            attribute (string): The name of the attribute that will contain the result
+                of the merge.
+            first (string): The name of the first attribute to merge.
+            *attributes (string): The other names that must be merged.            
 
         '''
         self.attribute = attribute
@@ -28,30 +37,27 @@ class MergeAttributes(BaseTransformation):
 
  
     def transform(self, original, ldapobject):
-        try:
-            #Assume we will end up with a multi-value (which is likely)
-            #Makes the code easier to read, and we will fix it before exiting
-            merged_values = []
+        #Assume we will end up with a multi-value (which is likely)
+        #Makes the code easier to read, and we will fix it before exiting
+        merged_values = []
 
-            for attribute in self.attributes:
-                #We are about to merge the values from another
-                #key, which might not exist. We wrap this call 
-                #in another try, so the loop can continue
-                try:
-                    if isinstance(ldapobject[attribute], basestring):
-                        merged_values.extend([ldapobject[attribute]])
-                    else:
-                        merged_values.extend(ldapobject[attribute])
+        for attribute in self.attributes:
+            #We are about to merge the values from another
+            #key, which might not exist. We wrap this call 
+            #in another try, so the loop can continue
+            try:
+                if isinstance(ldapobject[attribute], basestring):
+                    merged_values.extend([ldapobject[attribute]])
+                else:
+                    merged_values.extend(ldapobject[attribute])
 
-                    del ldapobject[attribute]
+                del ldapobject[attribute]
 
-                except KeyError:
-                    pass
+            except KeyError:
+                logging.debug('Attribute {} was not merged because it is not present in transformed object named {}'.format(self.attribute, ldapobject['dn']))
+                pass
 
-            ldapobject[self.attribute] = merged_values
-
-        except KeyError:
-            pass
+        ldapobject[self.attribute] = merged_values
 
         #Reuse
         return MakeValuesUnique(self.attribute).transform(original, ldapobject)

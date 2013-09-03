@@ -5,6 +5,7 @@ import ldapurl
 
 
 import basegenerator
+import rootDSE
 import utils
 
 __all__ = [ 'create_from_uri', 'LDAPReader']
@@ -96,7 +97,7 @@ class LDAPReader(basegenerator.BaseGenerator):
 
         if ldap_url.urlscheme == 'ldaps':
             #FIXME : Proper handling of certificate, or at least
-            #FIXME : make the ignore a connection setting
+            #FIXME : make the ignore a connection setting ?
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
             self.connection.set_option(ldap.OPT_REFERRALS, 0)
@@ -105,19 +106,15 @@ class LDAPReader(basegenerator.BaseGenerator):
             self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
 
 
-    @staticmethod
-    def create(args):
-        future_self = None
-
-        try:
-            future_self = LDAPReader(args.uri)
-        except ldap.LDAPError:
-            pass
-
-        return future_self
-
     def connect(self, user='', password=''):
+        #If the connection string did not include a basedn 
+        if self.base = '':
+            #We try to find it ourselves
+            self.base = rootDSE.get_ldap_base(self.connection, timeout=5)
+
         self.connection.simple_bind_s(user, password)
+
+        #This is to test the credentials.
         self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
 
         return self

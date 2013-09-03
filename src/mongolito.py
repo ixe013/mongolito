@@ -2,7 +2,6 @@
 """
 This is some text about mongolito.
 """
-import argparse
 import copy
 import logging
 import sys
@@ -18,22 +17,9 @@ import saveInMongo
 import transformations.errors
 
 
-def addArguments(parser):
-    parser.add_argument("-i", "--input", default='stdin',
-                      help="The source URI (file name, ldap or mongo URI) of record(s) to transform. Defaults to read LDIF from stdin")
-
-    parser.add_argument("-o", "--output", default='stdout',
-                      help="The destination URI (file name, ldap or mongo URI) of transformed record(s). Defaults to ouput LDIF to stdout")
-
-    parser.add_argument("-z", "--undo",
-                      help="The undo file name. The same output class as output will be used.")
-
-    return parser
-
 
 def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
-
 
 
 def process(istream, ostream, showprogress=True):
@@ -120,15 +106,6 @@ def process(istream, ostream, showprogress=True):
         print >> sys.stderr, ue
         
 
-def createArgumentParser():
-    '''Default argument parsing. Allows the developper to configure the 
-    transformation engine along with their code'''
-    parser = argparse.ArgumentParser()
-
-    parser = addArguments(parser)
-     
-    return parser
-
 
 def get_input_object(uri):
     '''
@@ -174,25 +151,6 @@ def get_output_and_undo_object(output_uri, undo_uri):
     return output_object, undo_object
 
     
-def getSourceDestinationUndo():
-    initialize_logging()
-
-    '''Returns the source and destination object as a tuple'''
-    parser = createArgumentParser()
-
-    #Start with the top level argument group, which will
-    #tell which end talks to which other end
-    args = parser.parse_args()
-
-    #Create both end of the process
-    source = get_input_object(args.input)
-    destination, undo = get_output_and_undo_object(args.output, args.undo)
-
-    #FIXME clients have to call connect and disconnect. Is that bad ?
-    return source, destination, undo
-    
-def initialize_logging():
-    logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'), level=logging.INFO)    
 
 def main():
     source, destination, undo = getSourceDestinationUndo()

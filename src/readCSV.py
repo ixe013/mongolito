@@ -2,7 +2,6 @@
 Reads in a bunch of CSV entries, making a dict out of each line.
 
 '''
-import argparse
 import csv
 import os
 
@@ -13,15 +12,6 @@ class CSVReader(object):
         self.delimiter = delimiter
         self.innerseparator = innerseparator
 
-    @staticmethod
-    def addArguments(parser):
-        group = parser.add_argument_group('Import CSV file')
-        group.add_argument("-x",
-                          "--csv", dest="csvfile",
-                          type=argparse.FileType('r'),
-                          help="The CSV file to import. Use - for stdin")
-
-        return parser
 
 
     #FIXME : should be in base class, mixin or similar
