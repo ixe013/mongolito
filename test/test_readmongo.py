@@ -3,7 +3,6 @@ import unittest
 import pymongo
 
 import readMongo
-import importExceptions
 
 class MyTest(unittest.TestCase):
     def testParseURI(self):

@@ -1,10 +1,18 @@
 import argparse
 import collections
 import logging
+import time
+
+import insensitivedict
 
 __all__ = ['Arguments']
 
 class Arguments(object):
+    '''Processes and stores the arguments received at the command line.
+
+    This class is a monostate class, aka Borg class. Multiple instances
+    share state.
+    '''
     #The name to value is not available to outside
     #modules but we have everything to make it up
     _logging_levels = collections.OrderedDict([
@@ -15,11 +23,12 @@ class Arguments(object):
         (logging.getLevelName(logging.DEBUG), logging.DEBUG),
     ])
 
+    #From Alex Martelli : http://code.activestate.com/recipes/66531/
+    __borg_shared_state = {}
 
     def __init__(self):
-        self._parser = argparse.ArgumentParser()
-        self._parser.add_argument('-t', '--trace', choices=self._logging_levels.keys(), default=logging.getLevelName(logging.WARNING))
-        self._connexions = {}
+        #Monostate class, better than singleton
+        self.__dict__ = self.__borg_shared_state
     
     def parse(self):
         '''
@@ -29,6 +38,9 @@ class Arguments(object):
         It also takes action on the following optional arguments, if present :
             trace : sets the logging level
         '''
+        self._parser = argparse.ArgumentParser()
+        self._parser.add_argument('-t', '--trace', choices=self._logging_levels.keys(), default=logging.getLevelName(logging.WARNING))
+
         args = self._parser.parse_known_args()
 
         #Sets the logging level
@@ -37,6 +49,8 @@ class Arguments(object):
 
         named_uris = args[-1:][0]
 
+        self._connexions =  insensitivedict.InsensitiveDict({})
+
         for connexion in named_uris:
             name, uri = connexion.split('=',1)
 
@@ -44,7 +58,6 @@ class Arguments(object):
                 logging.warning('Redefinition of URI %s from %s to %s', name, self._connexions[name], uri)
 
             self._connexions[name] = uri
-
 
 
     @property

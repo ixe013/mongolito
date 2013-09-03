@@ -108,7 +108,7 @@ class LDAPReader(basegenerator.BaseGenerator):
 
     def connect(self, user='', password=''):
         #If the connection string did not include a basedn 
-        if self.base = '':
+        if self.base == '':
             #We try to find it ourselves
             self.base = rootDSE.get_ldap_base(self.connection, timeout=5)
 

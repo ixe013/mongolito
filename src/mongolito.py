@@ -5,8 +5,8 @@ This is some text about mongolito.
 import copy
 import logging
 import sys
-import time
 
+import arguments
 import insensitivedict
 import readCSV
 import readLDIF
@@ -17,10 +17,13 @@ import saveInMongo
 import transformations.errors
 
 
+__all__ = ['initialize','process']
 
 def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
 
+def initialize():
+    initialize_logging()
 
 def process(istream, ostream, showprogress=True):
     '''
@@ -41,8 +44,10 @@ def process(istream, ostream, showprogress=True):
         progress = lambda x: None
 
     try:
-        generator = istream[0].get_search_object(istream[1], istream[2])    
-    except AttributeError:
+        source, query, projection = istream
+
+        generator = source.get_search_object(query, projection)
+    except ValueError: #Need more than 1 value to unpack
         generator = istream
 
     try:
@@ -144,16 +149,31 @@ def get_output_and_undo_object(output_uri, undo_uri):
 
     for module in output_modules:
         output_object = module.create_from_uri(output_uri)
-        if output_object is not None:
+        if output_object is not None and undo_uri is not None:
             undo_object = module.create_undo_from_uri(undo_uri)
+            #We got everything we need
             break
 
     return output_object, undo_object
 
     
+def getSourceDestinationUndo():
+    #Create both end of the process
+    source = get_input_object(args.input)
+    destination, undo = get_output_and_undo_object(args.output, args.undo)
+
+    #FIXME clients have to call connect and disconnect. Is that bad ?
+    return source, destination, undo
+    
 
 def main():
-    source, destination, undo = getSourceDestinationUndo()
+    args = arguments.Arguments()
+    args.parse()
+
+    connexions = args.connexions
+
+    source = get_input_object(connexions['input'])
+    destination, undo = get_output_and_undo_object(connexions['output'], connexions.get('undo'))
 
     source.connect()
     destination.connect()

@@ -3,6 +3,7 @@ import unittest
 
 import transformations
 from transformations.addattribute import AddAttribute
+from transformations.changecase import ChangeCase
 from transformations.copyattribute import CopyAttribute
 from transformations.copyfirstvalue import CopyFirstValueOfAttribute
 from transformations.join import JoinMultiValueAttribute
@@ -223,6 +224,39 @@ class ModuleTest(unittest.TestCase):
         }
 
         self.assertEqual(expected, current)
+
+    def testChangeCase(self):
+        ldapobject = {
+            'dn':'cn=JSmithJR,ou=People,ou=example,ou=com',
+            'ou':'people',
+            'single':'abracadabra',
+            'multi':['abracadabra', 'apple', 'cat', 'sky'],
+            'untouched':'blah'
+        }
+        
+        current = copy.deepcopy(ldapobject)
+
+        #Changing the DN propagates to the attribute that design the
+        #first component
+        renamer = ChangeCase('dn', '/cn=([A-Z])/', ChangeCase.LOWER)
+        renamer.transform(ldapobject, current)
+
+        #renamer = ChangeCase('multi', '/([a-z])/', ChangeCase.UPPER)
+        #renamer.transform(ldapobject, current)
+
+        #renamer = ChangeCase('single', '/([a-z])/', ChangeCase.UPPER)
+        #renamer.transform(ldapobject, current)
+
+        expected = {
+            'dn':'cn=jsmithjr,ou=People,ou=example,ou=com',
+            'ou':'people',
+            'single':'ABRACADABRA',
+            'multi':['abracadabra', 'apple', 'cat', 'sky'],
+            'untouched':'blah'
+        }
+
+        self.assertEqual(expected, current)
+
 
     def testRenameAttribute(self):
         #TODO

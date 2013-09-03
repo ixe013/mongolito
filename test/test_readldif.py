@@ -1,7 +1,6 @@
 import unittest
 
 import readLDIF
-import importExceptions
 
 class MyTest(unittest.TestCase):
     def testReadFragmentFeatures(self):
@@ -62,6 +61,7 @@ class MyTest(unittest.TestCase):
             #Processing stops, no need for a trailing \n
         ]
         
+        #FIXME : put the exception back
         #self.assertRaises(importExceptions.LDIFParsingException, readLDIF.extractLDIFFragment, rawLines)
 
 
