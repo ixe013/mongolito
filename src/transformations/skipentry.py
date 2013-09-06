@@ -1,3 +1,4 @@
+import logging
 import re
 
 import utils
@@ -11,37 +12,45 @@ class SkipEntry(BaseTransformation):
     a match and renamed if necessary.
 
     '''
-    def __init__(self, attribute, pattern):
+    def __init__(self, attribute, pattern, reverse=False):
         '''
-        >>>renamer = SkipEntry('dn', '/.*ou=AAA.*/')
+        Stops processing (and moves to the next ldap object) if
+        a value matches the pattern or not. 
 
-        :attribute the name of the attribute from which a value must be removed
+        >>>skipper = SkipEntry('dn', '/.*ou=AAA.*/')
+
+        Args:
+            attribute (string): the name of the attribute from which a value must be removed
+            pattern (string): a regex pattern (can be in javascript format /(.*)/) to search
+                in the attribute value(s). Search is always case-insensitive. 
+            revers (boolean): If true, non-matching entries will be skipped.
         '''
         self.attribute = attribute
-        self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
+        self.pattern = pattern
+        self.reverse = reverse
  
     def transform(self, original, ldapobject):
         '''
         :data a dictionary reprenting one entry
         '''
-        try:
-            value = utils.get_nested_attribute(ldapobject, self.attribute)
+        value = utils.get_nested_attribute(ldapobject, self.attribute)
 
-            #If the attribute is multi-valued
-            if isinstance(value, list): 
-                if any(self.pattern.search, value):
-                    raise errors.SkipEntryException
-            #If the attribute is a string
-            elif isinstance(value, basestring):
-                if self.pattern.search(value):
-                    raise errors.SkipObjectException
+        #regex are cached, let's use that to our advantage
+        pattern = re.compile(utils.pattern_from_javascript(self.pattern), flags=re.IGNORECASE)
+
+        #If the attribute is multi-valued
+        if isinstance(value, list): 
+            if self.reverse ^ bool(any(pattern.search, value)):
+                logging.debug('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
+                raise errors.SkipObjectException
+        else: #the attribute is a string
+            if self.reverse ^ bool(pattern.search(value)) :
+                logging.debug('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
+                raise errors.SkipObjectException
                     
-        except KeyError:
-            #The attribute name is not a regex, so there can only be
-            #one match.
-            pass
+        logging.debug('{} was not skipped because {} did not match pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
 
-        #Return the object, possibly modified                
+        #Return the object
         return ldapobject
  
 

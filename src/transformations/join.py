@@ -5,14 +5,14 @@ class JoinMultiValueAttribute(BaseTransformation):
     optional separator.
 
     '''
-    def __init__(self, attribute, separator, newname=None):
+    def __init__(self, attribute, separator=None, newname=None):
         '''
         >>>joiner = JoinMultiValueAttribute('owner', 'info')
 
         :attribute the name of the attribute whose value will be merged
         '''
         self.attribute = attribute
-        self.separator = separator
+        self.separator = separator or ''
         if newname is None:
             self.newname = attribute
         else:

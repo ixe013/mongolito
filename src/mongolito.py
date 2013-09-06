@@ -17,13 +17,17 @@ import saveInMongo
 import transformations.errors
 
 
-__all__ = ['initialize','process']
+__all__ = [
+    'initialize',
+    'process', 
+    'getSourceDestinationUndo' #FIXME : make the passage from name to generator generic
+]
+
+def initialize():
+    pass
 
 def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
-
-def initialize():
-    initialize_logging()
 
 def process(istream, ostream, showprogress=True):
     '''
@@ -90,9 +94,8 @@ def process(istream, ostream, showprogress=True):
                         undo.write(original, current)
 
                 except transformations.errors.SkipObjectException:
-                    output.comment('Skipped {0}'.format(ldapobject['dn']))
-                    #TODO Warn in the logger or comment in the output
-                    pass
+                    if output:
+                        output.comment('Skipped {}'.format(current['dn']))
 
             num_objects += 1
             progress(num_objects)
@@ -158,15 +161,6 @@ def get_output_and_undo_object(output_uri, undo_uri):
 
     
 def getSourceDestinationUndo():
-    #Create both end of the process
-    source = get_input_object(args.input)
-    destination, undo = get_output_and_undo_object(args.output, args.undo)
-
-    #FIXME clients have to call connect and disconnect. Is that bad ?
-    return source, destination, undo
-    
-
-def main():
     args = arguments.Arguments()
     args.parse()
 
@@ -174,6 +168,13 @@ def main():
 
     source = get_input_object(connexions['input'])
     destination, undo = get_output_and_undo_object(connexions['output'], connexions.get('undo'))
+
+    #FIXME clients have to call connect and disconnect. Is that bad ?
+    return source, destination, undo
+    
+
+def main():
+    source, destination, undo = getSourceDestinationUndo()
 
     source.connect()
     destination.connect()

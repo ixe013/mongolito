@@ -27,6 +27,9 @@ class AddAttribute(BaseTransformation):
                 ldapobject[self.attribute] = [ldapobject[self.attribute], str(self.value)]
         except KeyError:
             #We dit not have that value, add it
-            ldapobject[self.attribute] = str(self.value)
+            if isinstance(self.value, list):
+                ldapobject[self.attribute] = [str(x) for x in self.value]
+            else:            
+                ldapobject[self.attribute] = str(self.value)
 
         return ldapobject

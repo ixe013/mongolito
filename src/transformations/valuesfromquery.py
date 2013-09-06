@@ -75,8 +75,10 @@ class ValuesFromQuery(BaseTransformation):
                 #Prime the results with the cache 
                 results = [self.cache[key.lower()] for key in set(values) & set(self.cache)]
                 
-                #Add the count of object found to the hit count
-                self.cache['__hits'] += len(results)  
+                if results:
+                    logging.debug('Cache hit with {}'.format(results))
+                    #Add the count of object found to the hit count
+                    self.cache['__hits'] += len(results)  
 
                 #Remove the values found in the cache from the values to query
                 values = list(set(values) - set(self.cache))
@@ -103,7 +105,7 @@ class ValuesFromQuery(BaseTransformation):
                 for v in values:
                     #Cache the failure
                     self.cache[v.lower()] = None
-                    logging.warn('{0} not found in subquery'.format(v))
+                    logging.debug('Cache miss for {}'.format(v))
 
         else:
             #Return the original value untouched
