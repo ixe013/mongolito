@@ -1,9 +1,12 @@
+import itertools
 import logging 
 import re
 
 import utils
 
 from . import BaseTransformation
+
+#import pdb; pdb.set_trace()
 
 #This is just to differentiate from an int
 #based value
@@ -68,20 +71,19 @@ class ValuesFromQuery(BaseTransformation):
         match = self.pattern.search(attribute)
 
         if match:
-            values = match.groups()
+            values = [group.lower() for group in match.groups()]
             results = []
 
             if self.cache_enabled:
                 #Prime the results with the cache 
-                results = [self.cache[key.lower()] for key in set(values) & set(self.cache)]
+                results = [self.cache[key] for key in set(values) & set(self.cache)]
                 
                 if results:
-                    logging.debug('Cache hit with {}'.format(results))
+                    logging.debug('Cache hit for values {}'.format(values))
                     #Add the count of object found to the hit count
-                    self.cache['__hits'] += len(results)  
-
-                #Remove the values found in the cache from the values to query
-                values = list(set(values) - set(self.cache))
+                    self.cache['__hits'] += len(values)  
+                    #Remove the values found in the cache from the values to query
+                    values = list(set(values) - set(self.cache))
 
             #If there are values that were not found in the cache
             if values:
@@ -89,23 +91,20 @@ class ValuesFromQuery(BaseTransformation):
                 query = self.set_query_values(values)
 
                 self.cache['__miss'] += len(values)  
+                logging.info('Cache miss for {}'.format(values))
 
                 #Build an array of values. Most of the time, only
                 #one result will be returned
                 new_results = [r for r in self.source.get_attribute(query, self.selected)]
                 
-                results.extend(new_results)
+                if new_results:
+                    results.extend(new_results)
+                else:
+                    logging.warning('Subquery failed for {}'.format(values))
 
                 if self.cache_enabled:
-                    #Add the new results to the cache
-                    self.cache.update(dict(zip([v.lower() for v in values], new_results)))
-
-            #The subquery did not find anything
-            if not results:
-                for v in values:
-                    #Cache the failure
-                    self.cache[v.lower()] = None
-                    logging.debug('Cache miss for {}'.format(v))
+                    #Add the new results to the cache, along with the entries not found
+                    self.cache.update(dict(zip(values, new_results or itertools.repeat(None))))
 
         else:
             #Return the original value untouched
@@ -114,6 +113,7 @@ class ValuesFromQuery(BaseTransformation):
         #Filter out None (those mean that we have a cache 
         #hit, but the subquery did not find anything)
         return [x for x in results if x is not None]
+
         
     def transform(self, original, ldapobject):
         '''
