@@ -95,7 +95,9 @@ def process(istream, ostream, showprogress=True):
 
                 except transformations.errors.SkipObjectException:
                     if output:
-                        output.comment('Skipped {}'.format(current['dn']))
+                        msg = 'Skipped {}'.format(current['dn'])
+                        output.comment(msg)
+                        logging.info(msg)
 
             num_objects += 1
             progress(num_objects)
@@ -104,13 +106,16 @@ def process(istream, ostream, showprogress=True):
         #ostream parameter incorrect. Should be in the form rules, output, undo.
         #rules is a list, output and undo support the write method. You can always
         #use None for the undo function 
+        #FIXME logging.exception
         print >> sys.stderr, ve
         
     #FIXME : Should make this polymorphic or better than catching Exception
     except transformations.errors.ParsingException as pe:
+        #FIXME logging.exception
         print >> sys.stderr, pe
 
     except UnicodeError as ue:
+        #FIXME logging.exception
         print >> sys.stderr, ue
         
 
