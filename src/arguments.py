@@ -1,11 +1,14 @@
 import argparse
 import collections
 import logging
+import logging.handlers
 import time
 
 import insensitivedict
 
 __all__ = ['Arguments']
+
+LOG_FILENAME='mongolito.log'
 
 class Arguments(object):
     '''Processes and stores the arguments received at the command line.
@@ -44,8 +47,13 @@ class Arguments(object):
         args = self._parser.parse_known_args()
 
         #Sets the logging level
-        logging.basicConfig(filename=time.strftime('mongolito.%Y-%m-%d.%Hh%M.log'),
-                            level=self._logging_levels[args[0].trace])
+        logging.basicConfig(filename=LOG_FILENAME, level=self._logging_levels[args[0].trace])
+
+        rotating_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, backupCount=5)
+
+        rotating_handler.doRollover()
+
+        logging.info('Mongolito started.')
 
         named_uris = args[-1:][0]
 
