@@ -46,11 +46,19 @@ class Arguments(object):
 
         args = self._parser.parse_known_args()
 
+        root_logger = logging.getLogger()
+
         #Sets the logging level
-        logging.basicConfig(filename=LOG_FILENAME, level=self._logging_levels[args[0].trace])
+        root_logger.setLevel(self._logging_levels[args[0].trace])
+
+        formatter = logging.Formatter(logging.BASIC_FORMAT)
 
         rotating_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, backupCount=5)
+        rotating_handler.setFormatter(formatter)
 
+        root_logger.addHandler(rotating_handler)
+
+        #Each run starts a new log file
         rotating_handler.doRollover()
 
         logging.info('Mongolito started.')
