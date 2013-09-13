@@ -2,6 +2,7 @@ import bson
 import pymongo
 import string
  
+import baseproducer
 import utils
 
 class SaveException(Exception):
@@ -14,7 +15,7 @@ class SaveException(Exception):
         return 'Error line %d "%s" : %s' % (self.line, self.dn, self.message)
 
 
-class MongoWriter(object):
+class MongoWriter(baseproducer.BaseProducer):
     def __init__(self, host, database, collection):
         'Returs a callable object that will save ldap objects to a Mongo database'
         connection = pymongo.MongoClient(host)
