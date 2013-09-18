@@ -178,31 +178,6 @@ def getSourceDestinationUndo():
     return source, destination, undo
     
 
-def main():
-    source, destination, undo = getSourceDestinationUndo()
-
-    username = ''
-    password = ''
-
-    while(True):
-        try:
-            source.connect(username, password)
-            break
-        except errors.AuthenticationRequiredException:
-            username = raw_input('Enter a username for input ')
-            password = getpass.getpass('Password ')        
-        except errors.AuthenticationFailedException:
-            print >> sys.stderr, 'Authentication failed'
-            username = raw_input('Enter a username for input ')        
-            password = getpass.getpass('Password ')        
-
-    destination.connect()
-
-    process((source, {}, []), [([], destination, undo)])
-
-    destination.disconnect()
-    source.disconnect()
-
-
 if __name__ == "__main__":
-    main()
+    import main
+    main.main()

@@ -17,15 +17,17 @@ def main():
 
     source, destination, undo = getSourceDestinationUndo()
 
-    source.connect()
+    source.start()
+
+    #FIXME : Make destinations startable (connect) and stoppable (disconnect)
     destination.connect()
 
     process((source, {}, []), [([], destination, undo)])
-
-    destination.disconnect()
-    source.disconnect()
+    
+    source.stop()
 
     return result
+
 
 if __name__ == '__main__':
     return main()

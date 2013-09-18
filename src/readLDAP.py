@@ -7,6 +7,7 @@ import logging
 
 import basegenerator
 import errors
+import factory
 import rootDSE
 import utils
 
@@ -106,6 +107,8 @@ class LDAPReader(basegenerator.BaseGenerator):
             self.connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
             self.connection.set_option(ldap.OPT_X_TLS,ldap.OPT_X_TLS_DEMAND)
             self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
+
+        factory.Factory().register(self.__class__.__name__, create_from_uri)
 
 
     def connect(self, user='', password=''):
@@ -236,5 +239,4 @@ def create_from_uri(uri):
         pass
 
     return future_self
-
 

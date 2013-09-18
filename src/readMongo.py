@@ -4,6 +4,7 @@ import pymongo
 import re
 
 import basegenerator
+import factory
 
 
 def convert_query(query):
@@ -29,6 +30,7 @@ class MongoReader(basegenerator.BaseGenerator):
         self.database = database
         self.collection = collection
 
+        factory.Factory().register(self, self.__name__, create_from_uri)
 
     def connect(self):
         '''Creates a cursor to the supplied MongoDB database'''
