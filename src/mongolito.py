@@ -3,6 +3,7 @@
 This is some text about mongolito.
 """
 import copy
+import getpass
 import logging
 import sys
 
@@ -14,7 +15,7 @@ import readLDAP
 import readMongo
 import printldif
 import saveInMongo
-import transformations.errors
+import errors
 
 
 __all__ = [
@@ -81,7 +82,7 @@ def process(istream, ostream, showprogress=True):
                         #Remove the metadata
                         del current['mongolito']
                     except KeyError:
-                        #TODO warning if logging is info or debug
+                        logging.warning('No metadata found for object {}'.format(current['dn']))
                         pass
 
                     if output:
@@ -93,7 +94,7 @@ def process(istream, ostream, showprogress=True):
                         #but this single line works in most scenarios
                         undo.write(original, current)
 
-                except transformations.errors.SkipObjectException:
+                except errors.SkipObjectException:
                     if output:
                         msg = 'Skipped {}'.format(current['dn'])
                         output.comment(msg)
@@ -106,11 +107,10 @@ def process(istream, ostream, showprogress=True):
         #ostream parameter incorrect. Should be in the form rules, output, undo.
         #rules is a list, output and undo support the write method. You can always
         #use None for the undo function 
-        #FIXME logging.exception
-        print >> sys.stderr, ve
+        logging.exception('ostream parameter incorrect. Should be in the form rules, output, undo.')
         
     #FIXME : Should make this polymorphic or better than catching Exception
-    except transformations.errors.ParsingException as pe:
+    except errors.ParsingException as pe:
         #FIXME logging.exception
         print >> sys.stderr, pe
 
@@ -181,7 +181,21 @@ def getSourceDestinationUndo():
 def main():
     source, destination, undo = getSourceDestinationUndo()
 
-    source.connect()
+    username = ''
+    password = ''
+
+    while(True):
+        try:
+            source.connect(username, password)
+            break
+        except errors.AuthenticationRequiredException:
+            username = raw_input('Enter a username for input ')
+            password = getpass.getpass('Password ')        
+        except errors.AuthenticationFailedException:
+            print >> sys.stderr, 'Authentication failed'
+            username = raw_input('Enter a username for input ')        
+            password = getpass.getpass('Password ')        
+
     destination.connect()
 
     process((source, {}, []), [([], destination, undo)])

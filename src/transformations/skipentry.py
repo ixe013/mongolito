@@ -3,7 +3,8 @@ import re
 
 import utils
 
-from transformations import BaseTransformation, errors
+from transformations import BaseTransformation
+import errors
 
 class SkipEntry(BaseTransformation):
     '''Renames a value with a regular expression pattern.

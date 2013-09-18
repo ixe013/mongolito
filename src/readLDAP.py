@@ -2,9 +2,11 @@ import copy
 import ldap
 from ldap.controls import SimplePagedResultsControl
 import ldapurl
+import logging
 
 
 import basegenerator
+import errors
 import rootDSE
 import utils
 
@@ -87,15 +89,15 @@ class LDAPReader(basegenerator.BaseGenerator):
 
     def __init__(self, uri, serverctrls=None):
         #FIXME : try and handle ValueError ?
-        ldap_url = ldapurl.LDAPUrl(uri)
+        self.ldap_url = ldapurl.LDAPUrl(uri)
 
         #Will be use to understand queries with mongolito metadata later
-        self.base = ldap_url.dn
+        self.base = self.ldap_url.dn
         self.serverctrls = serverctrls
 
-        self.connection = LDAPObjectStream(ldap_url.unparse())
+        self.connection = LDAPObjectStream(self.ldap_url.unparse())
 
-        if ldap_url.urlscheme == 'ldaps':
+        if self.ldap_url.urlscheme == 'ldaps':
             #FIXME : Proper handling of certificate, or at least
             #FIXME : make the ignore a connection setting ?
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
@@ -107,15 +109,30 @@ class LDAPReader(basegenerator.BaseGenerator):
 
 
     def connect(self, user='', password=''):
-        #If the connection string did not include a basedn 
-        if self.base == '':
-            #We try to find it ourselves
-            self.base = rootDSE.get_ldap_base(self.connection, timeout=5)
+        try:
+            #If the connection string did not include a basedn 
+            if self.base == '':
+                #We try to find it ourselves
+                self.base = rootDSE.get_ldap_base(self.connection, timeout=5)
 
-        self.connection.simple_bind_s(user, password)
+            if user and password:
+                self.connection.simple_bind_s(user, password)
 
-        #This is to test the credentials.
-        self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
+            #This is to test the credentials.
+            self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
+
+        except ldap.INSUFFICIENT_ACCESS:
+            logging.error('Access denied to {}'.format(self.ldap_url.unparse()))
+            raise errors.AuthenticationRequiredException #Could be a step up
+        except ldap.INVALID_CREDENTIALS:
+            logging.warning('Invalid credentials provided for user {}'.format(user))
+            raise errors.AuthenticationFailedException()
+        except ldap.OPERATIONS_ERROR:
+            logging.warning('Credentials required')
+            raise errors.AuthenticationRequiredException()
+        except ldap.LDAPError:
+            logging.exception('Unable to connect to {}'.format(self.ldap_url.unparse()))
+            raise errors.UnableToConnectException()
 
         return self
 

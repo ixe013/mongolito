@@ -17,7 +17,7 @@ Will produce the following Python dict :
  'description':'Just a test.' }
 '''
 import base64
-import transformations.errors
+import errors
 import os
 
 import basegenerator
@@ -135,7 +135,7 @@ def extractLDIFFragment(inputStream, lineNumber=0):
             lines[len(lines)-1] += line.strip()
 
         else:
-            raise transformations.errors.ParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
+            raise errors.ParsingException(lineNumber, line.rstrip(), 'LDIF fragment starts with space')
 
         lastLineWasIgnored = False
 

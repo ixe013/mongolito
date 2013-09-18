@@ -1,4 +1,5 @@
 import bson
+import logging
 import pymongo
 import string
  

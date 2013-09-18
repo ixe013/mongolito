@@ -27,24 +27,21 @@ def get_ldap_base(ldap_connection, timeout=-1):
     '''
     basedn = ''
 
-    ldap_result_id = l.search_st('', ldap.SCOPE_BASE, 'objectClass=*', ['namingContexts','defaultNamingContext'], timeout=timeout)
+    ldap_result = ldap_connection.search_st('', ldap.SCOPE_BASE, 'objectClass=*', ['namingContexts','defaultNamingContext'], timeout=timeout)
 
-    result_type, result_data = l.result(ldap_result_id, 0)
-
-    if result_type == ldap.RES_SEARCH_ENTRY:
-        try:
-            result = result_data[0][1]
-            basedn = result['defaultNamingContext'][0]
-        except KeyError:
-            #No default naming context, we use the first 
-            #naming context we found (or default to an 
-            #empty string)
-            naming_contexts = result.get('namingContexts',[''])
-            basedn = naming_contexts[0]
-        except IndexError:
-            #No context were found. The default empty
-            #string will be returned
-            pass
+    try:
+        result = ldap_result[0][1]
+        basedn = result['defaultNamingContext'][0]
+    except KeyError:
+        #No default naming context, we use the first 
+        #naming context we found (or default to an 
+        #empty string)
+        naming_contexts = result.get('namingContexts',[''])
+        basedn = naming_contexts[0]
+    except IndexError:
+        #No context were found. The default empty
+        #string will be returned
+        pass
 
     return basedn
 
