@@ -13,6 +13,7 @@ import utils
 
 __all__ = [ 'create_from_uri', 'LDAPReader']
 
+
 class PagedResultsGenerator(object):
     def paged_search_ext_s(self,base,scope,filterstr='(objectClass=*)',attrlist=None,attrsonly=0,serverctrls=None,clientctrls=None,timeout=-1,sizelimit=0, page_size=1000):
         """
@@ -108,7 +109,7 @@ class LDAPReader(basegenerator.BaseGenerator):
             self.connection.set_option(ldap.OPT_X_TLS,ldap.OPT_X_TLS_DEMAND)
             self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
 
-        factory.Factory().register(self.__class__.__name__, create_from_uri)
+        self.name = 
 
 
     def connect(self, user='', password=''):
@@ -120,9 +121,15 @@ class LDAPReader(basegenerator.BaseGenerator):
 
             if user and password:
                 self.connection.simple_bind_s(user, password)
+            else:
+                #FIXME : We could support anonymous access also...
+                raise errors.AuthenticationRequiredException()
 
             #This is to test the credentials.
-            self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
+            result = self.connection.search_st(self.base, ldap.SCOPE_BASE, timeout=5)
+
+            if result is None or len(result) == 0:
+                logging.warning('Got an empty response trying to connect with user {}'.format(user))
 
         except ldap.INSUFFICIENT_ACCESS:
             logging.error('Access denied to {}'.format(self.ldap_url.unparse()))
@@ -131,6 +138,9 @@ class LDAPReader(basegenerator.BaseGenerator):
             logging.warning('Invalid credentials provided for user {}'.format(user))
             raise errors.AuthenticationFailedException()
         except ldap.OPERATIONS_ERROR:
+            #This exceptions was tested with an ActiveDirectory 2008 R2, functionnal level 2003
+            #when making an anonymous search. You shouldn't get here becase the password is
+            #explicitely checked before attempting the search 
             logging.warning('Credentials required')
             raise errors.AuthenticationRequiredException()
         except ldap.LDAPError:
@@ -239,4 +249,7 @@ def create_from_uri(uri):
         pass
 
     return future_self
+
+#Boilerplate code to register this in the factory
+factory.Factory().register(LDAPReader.__name__, create_from_uri)
 

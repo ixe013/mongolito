@@ -9,6 +9,8 @@ import insensitivedict
 __all__ = ['Arguments']
 
 LOG_FILENAME='mongolito.log'
+LOG_FORMAT = '%(asctime)s;%(levelname)s;%(filename)s:%(lineno)d;%(message)s' #Make it csv like (except for the message part)
+LOG_TIMEFORMAT = None #default is fine
 
 class Arguments(object):
     '''Processes and stores the arguments received at the command line.
@@ -51,7 +53,7 @@ class Arguments(object):
         #Sets the logging level
         root_logger.setLevel(self._logging_levels[args[0].trace])
 
-        formatter = logging.Formatter(logging.BASIC_FORMAT)
+        formatter = logging.Formatter(LOG_FORMAT, LOG_TIMEFORMAT)
 
         rotating_handler = logging.handlers.RotatingFileHandler(LOG_FILENAME, backupCount=5)
         rotating_handler.setFormatter(formatter)
@@ -65,21 +67,20 @@ class Arguments(object):
 
         named_uris = args[-1:][0]
 
-        self._connexions =  insensitivedict.InsensitiveDict({})
+        self._connections =  insensitivedict.InsensitiveDict({})
 
         for connexion in named_uris:
             name, uri = connexion.split('=',1)
 
-            if name in self._connexions:
-                logging.warning('Redefinition of URI %s from %s to %s', name, self._connexions[name], uri)
+            if name in self._connections:
+                logging.warning('Redefinition of URI %s from %s to %s', name, self._connections[name], uri)
 
-            self._connexions[name] = uri
+            self._connections[name] = uri
 
 
     @property
-    def connexions(self):
-        return self._connexions
-
+    def connections(self):
+        return self._connections
 
 
 if __name__ == '__main__':

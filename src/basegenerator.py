@@ -1,4 +1,5 @@
 import getpass
+import sys
 
 import errors
 
@@ -24,9 +25,13 @@ class BaseGenerator(object):
         '''
         return self.search(query, attributes)
 
-    def start(self):
+    def start(self, name=''):
         '''Generic method that wraps connect and handles prompting the user 
-        for a password if required.'''
+        for a password if required.
+        
+        Arguments:
+            name (string) : Used for prompts and logs only
+        '''
         username = ''
         password = ''
 
@@ -35,14 +40,18 @@ class BaseGenerator(object):
                 self.connect(username, password)
                 break
             except errors.AuthenticationRequiredException:
-                username = raw_input('Enter a username for input ')
+                username = raw_input('Enter a username for input {} '.format(name))
                 password = getpass.getpass('Password ')        
             except errors.AuthenticationFailedException:
                 print >> sys.stderr, 'Authentication failed'
-                username = raw_input('Enter a username for input ')        
+                username = raw_input('Enter a username for input {} '.format(name))
                 password = getpass.getpass('Password ')        
 
     def stop(self):
         '''Generic method that wraps disconnect. Does nothing else for now
         but there for symetry with start'''
         self.disconnect()
+
+    @property 
+    def name(self):
+        return self.name

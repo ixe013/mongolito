@@ -8,27 +8,48 @@ this trivial example, the file a.ldif is simply copied in b.ldif :
 python mongolito.py input=a.ldif output=b.ldif
 '''
 
-import argparse
+import arguments
+import factory
+import insensitivedict
 
 __all__ = ['main']
+
+args = arguments.Arguments()
+
+def get_connections():
+    '''Creates a dict of connections from the command line.'''
+    args.parse()
+    connections = insensitivedict.InsensitiveDict({})
+    god = factory.Factory()
+
+    for name,uri in args.connections.items():
+        connections[name] = god.create(uri)
+
+    return connections
+        
 
 def main():
     result = -1
 
-    source, destination, undo = getSourceDestinationUndo()
+    connections = get_connections()
 
-    source.start()
+    connections['input'].start()
+    connections['input'].stop()
 
-    #FIXME : Make destinations startable (connect) and stoppable (disconnect)
-    destination.connect()
-
-    process((source, {}, []), [([], destination, undo)])
-    
-    source.stop()
+   #source, destination, undo = getSourceDestinationUndo()
+   #
+   #source.start()
+   #
+   ##FIXME : Make destinations startable (connect) and stoppable (disconnect)
+   #destination.connect()
+   #
+   #process((source, {}, []), [([], destination, undo)])
+   #
+   #source.stop()
 
     return result
 
 
 if __name__ == '__main__':
-    return main()
+    main()
 

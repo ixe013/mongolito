@@ -8,6 +8,7 @@ import logging
 import sys
 
 import arguments
+import main
 import insensitivedict
 import readCSV
 import readLDIF
@@ -25,7 +26,7 @@ __all__ = [
 ]
 
 def initialize():
-    pass
+    return main.get_connections()
 
 def update_progress(total):
     sys.stderr.write('\r{0} objects'.format(total))
@@ -174,7 +175,7 @@ def getSourceDestinationUndo():
     source = get_input_object(connexions['input'])
     destination, undo = get_output_and_undo_object(connexions['output'], connexions.get('undo'))
 
-    #FIXME clients have to call connect and disconnect. Is that bad ?
+    #FIXME clients have to call start and stop. Is that bad ?
     return source, destination, undo
     
 

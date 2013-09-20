@@ -2,6 +2,7 @@
 '''Miscellaneous helper functions to help identifying the directory
 '''
 import ldap
+import logging
 
 def get_ldap_base(ldap_connection, timeout=-1):
     '''
@@ -39,12 +40,9 @@ def get_ldap_base(ldap_connection, timeout=-1):
         naming_contexts = result.get('namingContexts',[''])
         basedn = naming_contexts[0]
     except IndexError:
-        #No context were found. The default empty
-        #string will be returned
-        pass
+        logging.warning('No base context was found. Add it to the URL (using RFC 2255 format).')
 
     return basedn
-
 
 
 if __name__ == '__main__':
