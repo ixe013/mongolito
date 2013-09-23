@@ -54,4 +54,4 @@ class BaseGenerator(object):
 
     @property 
     def name(self):
-        return self.name
+        return self._name

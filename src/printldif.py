@@ -2,7 +2,10 @@ import base64
 import os
 import string
 import textwrap
+import sys
 
+import basedestination
+import factory
 
 RFC2849_MAX_LINE = 76
 CHUNK_MAX_VALUES = 1337
@@ -46,24 +49,27 @@ def RFC2849WrappedOuput(attribute, separator, value):
     return lines
 
 
-class LDIFPrinter(object):
-    def __init__(self, ldiffile, overwrite=True, dontwrap=True, dontencode=False):
-        self.ldiffile = ldiffile
+class LDIFPrinter(basedestination.BaseDestination):
+    def __init__(self, ldiffile=None, overwrite=True, dontwrap=True, dontencode=False):
+        self.ldiffilename = ldiffile
         self.dontwrap = dontwrap
         self.dontencode = dontencode
         self.overwrite = overwrite
 
 
     def connect(self):
-        self.ldiffile = open(self.ldiffile, 'a')
+        if self.ldiffilename is None:
+            self.ldiffile = sys.stdout
+        else:
+            self.ldiffile = open(self.ldiffilename, 'a')
+            if self.overwrite:
+                self.ldiffile.truncate(0)
 
-        if self.overwrite:
-            self.ldiffile.truncate(0)
-        
         return self
 
     def disconnect(self):
-        self.ldiffile.close()
+        if not self.ldiffilename is None:
+            self.ldiffile.close()
         return self
 
     def comment(self, text):
@@ -250,4 +256,7 @@ def create_undo_from_uri(uri):
     can have any extension
     '''    
     return LDIFPrinter(uri)
+
+#Boilerplate code to register this in the factory
+factory.Factory().register(LDIFPrinter.__name__, create_from_uri)
 

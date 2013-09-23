@@ -8,9 +8,13 @@ this trivial example, the file a.ldif is simply copied in b.ldif :
 python mongolito.py input=a.ldif output=b.ldif
 '''
 
+import sys
+
 import arguments
 import factory
 import insensitivedict
+import mongolito
+import printldif
 
 __all__ = ['main']
 
@@ -33,19 +37,21 @@ def main():
 
     connections = get_connections()
 
-    connections['input'].start()
-    connections['input'].stop()
+    if 'input' in connections :
+        source = connections['input']
+        source.start()
+        if 'output' in connections :
+            destination = connections['output']
+        else:   
+            destination = printldif.LDIFPrinter()
 
-   #source, destination, undo = getSourceDestinationUndo()
-   #
-   #source.start()
-   #
-   ##FIXME : Make destinations startable (connect) and stoppable (disconnect)
-   #destination.connect()
-   #
-   #process((source, {}, []), [([], destination, undo)])
-   #
-   #source.stop()
+        destination.start()
+        query = { 'objectClass':'*' } #Could be quite large
+        mongolito.process((source, query, []), [([], destination, None)])
+        destination.stop()
+        source.stop()
+    else:
+        print >> sys.stderr, 'You must specify one source as an input'
 
     return result
 

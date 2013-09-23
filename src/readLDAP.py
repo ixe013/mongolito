@@ -109,7 +109,7 @@ class LDAPReader(basegenerator.BaseGenerator):
             self.connection.set_option(ldap.OPT_X_TLS,ldap.OPT_X_TLS_DEMAND)
             self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
 
-        self.name = 
+        self._name = self.ldap_url.unparse()
 
 
     def connect(self, user='', password=''):
