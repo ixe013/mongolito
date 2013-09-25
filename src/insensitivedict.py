@@ -12,12 +12,12 @@ class InsensitiveDict(dict):
     contributed by Sami Hangaslammi.
     """
 
-    def __init__(self, dict=None, preserve=1):
+    def __init__(self, source=None, preserve=1):
         """Create an empty dictionary, or update from 'dict'."""
         self.data = {}
         self.preserve=preserve
-        if dict:
-            self.update(dict)
+        if source :
+            self.update(dict(source))
 
     def __delitem__(self, key):
         k=self._lowerOrReturn(key)
@@ -81,10 +81,15 @@ class InsensitiveDict(dict):
             self[key] = default
         return self[key]
 
-    def update(self, dict):
-        """Copy (key,value) pairs from 'dict'."""
-        for k,v in dict.items():
-            self[k] = v
+    def update(self, toadd):
+        if isinstance(toadd, dict):
+            """Copy (key,value) pairs from 'dict'."""
+            for k,v in toadd.items():
+                self[k] = v
+        else:
+            for k,v in toadd:
+                self[k] = v
+            
 
     def __repr__(self):
         """String representation of the dictionary."""

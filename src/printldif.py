@@ -258,5 +258,5 @@ def create_undo_from_uri(uri):
     return LDIFPrinter(uri)
 
 #Boilerplate code to register this in the factory
-factory.Factory().register(LDIFPrinter.__name__, create_from_uri)
+factory.Factory().register(type(LDIFPrinter), create_from_uri)
 

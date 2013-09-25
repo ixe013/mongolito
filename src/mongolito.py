@@ -57,7 +57,10 @@ def process(istream, ostream, showprogress=True):
         generator = istream
 
     try:
-        for num_objects, ldapobject in enumerate(generator):
+        #We don't use enumerate, because we have to tweak the total count
+        #each time we skip an object
+        num_objects = 0
+        for ldapobject in generator:
             for rules, output, undo in ostream:
                 #The original ldapobject that will be sent to the methods must not be 
                 #modified. It is an interface contract, because technically speaking
@@ -96,6 +99,8 @@ def process(istream, ostream, showprogress=True):
                         undo.write(original, current)
 
                 except errors.SkipObjectException:
+                    #That object will not count in the total
+                    num_objects -= 1
                     if output:
                         msg = 'Skipped {}'.format(current['dn'])
                         output.comment(msg)

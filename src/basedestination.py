@@ -4,9 +4,11 @@ class BaseDestination(object):
     to output.
     '''
 
-    def start(self, name=''):
+    def start(self, username=None, password=None, name=None):
         self.connect()
+        return self
 
     def stop(self):
         self.disconnect()
+        return self
 

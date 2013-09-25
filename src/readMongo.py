@@ -30,8 +30,6 @@ class MongoReader(basegenerator.BaseGenerator):
         self.database = database
         self.collection = collection
 
-        factory.Factory().register(self, self.__name__, create_from_uri)
-
     def connect(self):
         '''Creates a cursor to the supplied MongoDB database'''
         connection = pymongo.MongoClient(self.host)
@@ -145,4 +143,6 @@ def create_from_uri(uri):
         logging.debug('Malformed mongo uri. See http://docs.mongodb.org/manual/reference/connection-string/')
     
     return result
+
+factory.Factory().register(type(MongoReader), create_from_uri)
 

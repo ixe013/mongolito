@@ -25,32 +25,38 @@ class BaseGenerator(object):
         '''
         return self.search(query, attributes)
 
-    def start(self, name=''):
+    def start(self, username=None, password=None, name=None):
         '''Generic method that wraps connect and handles prompting the user 
         for a password if required.
         
         Arguments:
             name (string) : Used for prompts and logs only
+
+        Returns self
         '''
-        username = ''
-        password = ''
+        _username = username or ''
+        _password = password or ''
+        _name = name or self.name
 
         while(True):
             try:
-                self.connect(username, password)
+                self.connect(_username, _password)
                 break
             except errors.AuthenticationRequiredException:
-                username = raw_input('Enter a username for input {} '.format(name))
-                password = getpass.getpass('Password ')        
+                _username = raw_input('Enter a username for {} [{}] '.format(_name, _username)) or _username
+                _password = getpass.getpass('Password ')        
             except errors.AuthenticationFailedException:
                 print >> sys.stderr, 'Authentication failed'
-                username = raw_input('Enter a username for input {} '.format(name))
-                password = getpass.getpass('Password ')        
+                _username = raw_input('Enter a username for {} [{}] '.format(_name, _username)) or _username
+                _password = getpass.getpass('Password ')        
+
+        return self
 
     def stop(self):
         '''Generic method that wraps disconnect. Does nothing else for now
         but there for symetry with start'''
         self.disconnect()
+        return self
 
     @property 
     def name(self):

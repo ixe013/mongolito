@@ -1,4 +1,6 @@
+import basegenerator
 import logging
+
 
 class Factory(object):
     '''
@@ -14,7 +16,7 @@ class Factory(object):
         self.__dict__ = self.__borg_shared_state
 
 
-    def register(self, name, detection):
+    def register(self, classobject, detection):
         '''Classes send a bound method or function that will accept
         a uri and possibly return an object capable of handling the 
         objects it holds.
@@ -26,11 +28,13 @@ class Factory(object):
                         uri it is given and return an object capable 
                         of handling it, or None if it can't.
         '''
+        is_input = isinstance(classobject, type(basegenerator.BaseGenerator))
+
         #Saves the name and creation routine
-        self.factories.append({'name':name,'detection':detection})
+        self.factories.append({'name':classobject.__name__,'detection':detection, 'generator':is_input})
 
         
-    def create(self, uri):
+    def create(self, uri, generator):
         '''This method will loop through the factories, in the order they
         were registered, and ask them for an object capable of handling 
         the uri they are presented with. 
@@ -44,12 +48,13 @@ class Factory(object):
         '''
         created = None
         for producer in self.factories:
-            created = producer['detection'](uri)
-            if created:
-                logging.info('{} created for uri {}'.format(producer['name'], uri))
-                break
-            else:
-                logging.debug('{} was could not handle uri {}'.format(producer['name'], uri))
+            if producer['generator'] == generator:
+                created = producer['detection'](uri)
+                if created:
+                    logging.info('{} created for uri {}'.format(producer['name'], uri))
+                    break
+                else:
+                    logging.debug('{} could not handle uri {}'.format(producer['name'], uri))
 
         if created is None:
             logging.error('No object could handle uri {}'.format(uri))

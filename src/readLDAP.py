@@ -141,7 +141,7 @@ class LDAPReader(basegenerator.BaseGenerator):
             #This exceptions was tested with an ActiveDirectory 2008 R2, functionnal level 2003
             #when making an anonymous search. You shouldn't get here becase the password is
             #explicitely checked before attempting the search 
-            logging.warning('Credentials required')
+            logging.warning('Credentials required for {}'.format(self.ldap_url.unparse()))
             raise errors.AuthenticationRequiredException()
         except ldap.LDAPError:
             logging.exception('Unable to connect to {}'.format(self.ldap_url.unparse()))
@@ -251,5 +251,5 @@ def create_from_uri(uri):
     return future_self
 
 #Boilerplate code to register this in the factory
-factory.Factory().register(LDAPReader.__name__, create_from_uri)
+factory.Factory().register(type(LDAPReader), create_from_uri)
 

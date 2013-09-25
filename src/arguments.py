@@ -2,6 +2,8 @@ import argparse
 import collections
 import logging
 import logging.handlers
+import os
+import stat
 import time
 
 import insensitivedict
@@ -45,10 +47,13 @@ class Arguments(object):
         '''
         self._parser = argparse.ArgumentParser()
         self._parser.add_argument('-t', '--trace', choices=self._logging_levels.keys(), default=logging.getLevelName(logging.WARNING))
+        self._parser.add_argument('-c', '--configuration', help='A configuration file. The first section will be used, regardless of name')
 
         args = self._parser.parse_known_args()
 
         root_logger = logging.getLogger()
+
+        self._configuration = args[0].configuration
 
         #Sets the logging level
         root_logger.setLevel(self._logging_levels[args[0].trace])
@@ -61,7 +66,7 @@ class Arguments(object):
         root_logger.addHandler(rotating_handler)
 
         #Each run starts a new log file
-        rotating_handler.doRollover()
+        #rotating_handler.doRollover()
 
         logging.info('Mongolito started.')
 
@@ -82,6 +87,9 @@ class Arguments(object):
     def connections(self):
         return self._connections
 
+    @property
+    def configuration(self):
+        return self._configuration or {}
 
 if __name__ == '__main__':
     args = Arguments()

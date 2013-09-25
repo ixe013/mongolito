@@ -28,7 +28,7 @@ class LDIFReader(basegenerator.BaseGenerator):
         self.ldiffile = ldiffile
 
     def connect(self):
-        if self.ldiffile == 'stdin':
+        if not sefl.ldiffile:
             self.ldiffile = sys.stdin
         else:
             self.ldiffile = open(self.ldiffile, 'r')
