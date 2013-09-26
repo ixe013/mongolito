@@ -38,7 +38,7 @@ class BaseGenerator(object):
         _password = password or ''
         _name = name or self.name
 
-        while(True):
+        for i in range(0,3):
             try:
                 self.connect(_username, _password)
                 break

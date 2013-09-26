@@ -69,19 +69,38 @@ def get_connections():
 
     god = factory.Factory()
 
+    aliases = []
     for connection, uri in connections.items():
-        #Get a dict of all the params for that connection
-        params = nestedconfigdict.get_nested_config_elements(config, connection, idict)
-        
-        #Get the type. If none is provided but the name is input,
-        #consider it as an input. All other cases are outputs
-        conn = god.create(uri, params.get('type','').lower()=='input')
-
-        if conn:
-            conn.start(params.get('username'), params.get('password'), params.get('description'))
-            connections[connection] = conn
+        if uri.startswith('@'):
+            #We will handle alias later
+            aliases.append(connection)
         else:
-            logging.error('No handler could be created for {}'.format(uri))
+            #Get a dict of all the params for that connection
+            params = nestedconfigdict.get_nested_config_elements(config, connection, idict)
+            
+            #Get the type. If none is provided but the name is input,
+            #consider it as an input. All other cases are outputs
+            conn = god.create(uri, params.get('type','').lower()=='input')
+
+            if conn:
+                conn.start(params.get('username'), params.get('password'), params.get('description'))
+
+                connections[connection] = conn
+            else:
+                logging.error('No handler could be created for {}'.format(uri))
+
+    #For each alias found
+    for alias in aliases:
+        target = connections[alias][1:]
+        #Add a reference to an existing object
+        try : 
+            connections[alias] = connections[target]
+        except KeyError: 
+            logging.error('Alias {} requested for non-existing configuration named {}'.format(alias, target))
+
+    if 'input' not in connections and is_stdin_redirected():
+        #Throw in a defautl LDIF output
+        connections.update({'input':readLDIF.LDIFReader().start()})
 
     if 'output' not in connections:
         #Throw in a defautl LDIF output
@@ -93,9 +112,9 @@ def get_connections():
 def main():
     result = -1
 
-    try:
-        connections = mongolito.initialize()
+    connections = mongolito.initialize()
 
+    if 'input' in connections:
         source = connections['input']
         destination = connections['output']
         undo = connections.get('undo')
@@ -103,11 +122,10 @@ def main():
         query = { 'objectClass':'*' } #Could be quite large
         mongolito.process((source, query, []), [([], destination, undo)])
 
-        undo.stop()
-        destination.stop()
+        if undo: undo.stop()
+        if destination: destination.stop()
         source.stop()
-
-    except KeyError:
+    else:
         print >> sys.stderr, 'You must specify one source as an input'
 
     return result
