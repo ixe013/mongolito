@@ -2,6 +2,7 @@ import basegenerator
 import logging
 
 
+
 class Factory(object):
     '''
     This is the base class for objects that register a method 
@@ -31,33 +32,40 @@ class Factory(object):
         is_input = isinstance(classobject, type(basegenerator.BaseGenerator))
 
         #Saves the name and creation routine
-        self.factories.append({'name':classobject.__name__,'detection':detection, 'generator':is_input})
+        self.factories.append({'name':classobject.__name__,'detection':detection, 'input':is_input})
 
         
-    def create(self, uri, generator):
+    def create(self, params):
         '''This method will loop through the factories, in the order they
         were registered, and ask them for an object capable of handling 
         the uri they are presented with. 
 
         Arguments:
-            uri (string) : the uri we are looking to handle
+            params (dict) : a dictionary of attributes and values for this connection
 
         Return value:
             A handler for the input or None if it could not find a 
             suitable handler.
         '''
+        from main import URI, TYPE, INPUT
         created = None
-        for producer in self.factories:
-            if producer['generator'] == generator:
-                created = producer['detection'](uri)
-                if created:
-                    logging.info('{} created for uri {}'.format(producer['name'], uri))
-                    break
-                else:
-                    logging.debug('{} could not handle uri {}'.format(producer['name'], uri))
+        try:
+            uri = params['uri']
+            for producer in self.factories:
+                #If the producer's type is the same as the type attribute
+                #in the param dict
+                if producer['input'] == (params.get(TYPE, INPUT) == INPUT):
+                    created = producer['detection'](uri)
+                    if created:
+                        logging.info('{} created for uri {}'.format(producer['name'], uri))
+                        break
+                    else:
+                        logging.debug('{} could not handle uri {}'.format(producer['name'], uri))
 
-        if created is None:
-            logging.error('No object could handle uri {}'.format(uri))
+            if created is None:
+                logging.error('No suitable factory found to handle uri {}'.format(uri))
+        except KeyError:
+            logging.error('No uri provided')
 
         return created
 

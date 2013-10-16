@@ -28,7 +28,7 @@ def get_ldap_base(ldap_connection, timeout=-1):
     '''
     basedn = ''
 
-    ldap_result = ldap_connection.search_st('', ldap.SCOPE_BASE, 'objectClass=*', ['namingContexts','defaultNamingContext'], timeout=timeout)
+    ldap_result = ldap_connection.search_s('', ldap.SCOPE_BASE, 'objectClass=*', ['namingContexts','defaultNamingContext'], timeout=timeout)
 
     try:
         result = ldap_result[0][1]

@@ -41,8 +41,8 @@ class PagedResultsGenerator(object):
         )
         
         while True:
-            rtype, rdata, rmsgid, rctrls = self.result3(msgid)
-            #all_results.extend(rdata)
+            rtype, rdata, rmsgid, rctrls = self.result4(msgid)
+
             for r in rdata:
                 yield r
           
@@ -88,7 +88,6 @@ def convert_raw_ldap_result(dn, raw):
 
         
 class LDAPReader(basegenerator.BaseGenerator):
-
     def __init__(self, uri, serverctrls=None):
         #FIXME : try and handle ValueError ?
         self.ldap_url = ldapurl.LDAPUrl(uri)
@@ -99,13 +98,14 @@ class LDAPReader(basegenerator.BaseGenerator):
 
         self.connection = LDAPObjectStream(self.ldap_url.unparse())
 
+        self.connection.set_option(ldap.OPT_REFERRALS, 0)
+        self.connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
+
         if self.ldap_url.urlscheme == 'ldaps':
             #FIXME : Proper handling of certificate, or at least
             #FIXME : make the ignore a connection setting ?
             ldap.set_option(ldap.OPT_X_TLS_REQUIRE_CERT, ldap.OPT_X_TLS_NEVER)
 
-            self.connection.set_option(ldap.OPT_REFERRALS, 0)
-            self.connection.set_option(ldap.OPT_PROTOCOL_VERSION, 3)
             self.connection.set_option(ldap.OPT_X_TLS,ldap.OPT_X_TLS_DEMAND)
             self.connection.set_option(ldap.OPT_X_TLS_DEMAND, True )
 

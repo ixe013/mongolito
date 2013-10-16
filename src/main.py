@@ -10,17 +10,25 @@ python mongolito.py input=a.ldif output=b.ldif
 
 import ConfigParser as configparser
 import logging
+import os
+import stat
 import sys
 
 import arguments
 import factory
 from insensitivedict import InsensitiveDict as idict
 import mongolito
-import nestedconfigdict
 import printldif
 import readLDIF
 
-__all__ = ['main']
+#Contants
+TYPE = 'type'
+INPUT = 'input'
+OUTPUT = 'output'
+UNDO = 'undo'
+URI = 'uri'
+
+__all__ = ['main','type','input','output','undo','uri']
 
 args = arguments.Arguments()
 
@@ -31,6 +39,7 @@ def is_stdin_redirected():
     '''
     mode = os.fstat(0).st_mode
     return stat.S_ISFIFO(mode) or stat.S_ISREG(mode)
+
 
 def get_connections():
     '''Creates a dict of connections found in the configuration file or
@@ -46,48 +55,61 @@ def get_connections():
     args.parse()
 
     connections = idict({})
-    config = configparser.SafeConfigParser()
+    config = configparser.SafeConfigParser(dict_type=idict)
 
     if args.configuration:
         config.read(args.configuration)
 
-    try:
-        #Use the first section name, any name
-        section_name = config.sections()[0]
+    aliases = []
 
-        #A command line argument will override the configuration file
-        #but only for the top level item. 
-        for k,v in args.connections.items():
-            config.set(section_name, k, v)
+    #A command line argument will override the configuration file
+    #but only for the top level item. 
+    for attribute,value in args.connections.items():
+        #Alias have alias_name=@connection_name
+        if value.startswith('@'):
+            #Aliases will be resolved later, after the connection is
+            #created
+            aliases.append(attribute)
+        #Are we defining a new connection
+        elif '.' in attribute:
+            #We can override a connection's URI with 
+            #name.uri=new_uri
+            section_name, param = attribute.split('.',1)
+            if not config.has_section(section_name):
+                config.add_section(section_name)
 
-    except IndexError:
-        section_name = None
+            config.set(section_name, param, value)
+                
+        else:
+            if not config.has_section(attribute):
+                config.add_section(attribute)
+                #output and undo are considered outputs 
+                if attribute == OUTPUT or attribute == UNDO:
+                    config.set(attribute, TYPE, OUTPUT)
+                else:
+                    #others are input by default
+                    config.set(attribute, TYPE, INPUT)
 
-
-    #boot strap the connections with what is in the file
-    connections = nestedconfigdict.get_top_level_config_elements(config, idict)
+            #The attribute will be the connection name
+            #and the value the uri. The type is input
+            config.set(attribute, 'uri', value)
+            
 
     god = factory.Factory()
 
-    aliases = []
-    for connection, uri in connections.items():
-        if uri.startswith('@'):
-            #We will handle alias later
-            aliases.append(connection)
+    for connection in config.sections():
+        #Get a dict of all the params for that connection
+        params = idict(config.items(connection))
+        
+        #Create the connection
+        conn = god.create(params)
+
+        if conn:
+            conn.start(params.get('username'), params.get('password'), params.get('description'))
+
+            connections[connection] = conn
         else:
-            #Get a dict of all the params for that connection
-            params = nestedconfigdict.get_nested_config_elements(config, connection, idict)
-            
-            #Get the type. If none is provided but the name is input,
-            #consider it as an input. All other cases are outputs
-            conn = god.create(uri, params.get('type','').lower()=='input')
-
-            if conn:
-                conn.start(params.get('username'), params.get('password'), params.get('description'))
-
-                connections[connection] = conn
-            else:
-                logging.error('No handler could be created for {}'.format(uri))
+            logging.error('No handler could be created for {}'.format(connection))
 
     #For each alias found
     for alias in aliases:
