@@ -69,7 +69,7 @@ def get_connections():
         if value.startswith('@'):
             #Aliases will be resolved later, after the connection is
             #created
-            aliases.append(attribute)
+            aliases.append((attribute,value[1:]))
         #Are we defining a new connection
         elif '.' in attribute:
             #We can override a connection's URI with 
@@ -113,10 +113,10 @@ def get_connections():
 
     #For each alias found
     for alias in aliases:
-        target = connections[alias][1:]
+        #Alias is a name alias tuple, with the @ striped off
         #Add a reference to an existing object
         try : 
-            connections[alias] = connections[target]
+            connections[alias[0]] = connections[alias[1]]
         except KeyError: 
             logging.error('Alias {} requested for non-existing configuration named {}'.format(alias, target))
 
