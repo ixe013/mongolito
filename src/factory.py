@@ -29,7 +29,7 @@ class Factory(object):
                         uri it is given and return an object capable 
                         of handling it, or None if it can't.
         '''
-        is_input = isinstance(classobject, type(basegenerator.BaseGenerator))
+        is_input = issubclass(classobject, basegenerator.BaseGenerator)
 
         #Saves the name and creation routine
         self.factories.append({'name':classobject.__name__,'detection':detection, 'input':is_input})
@@ -52,9 +52,10 @@ class Factory(object):
         try:
             uri = params['uri']
             for producer in self.factories:
+                is_input = params.get(TYPE, INPUT) == INPUT
                 #If the producer's type is the same as the type attribute
                 #in the param dict
-                if producer['input'] == (params.get(TYPE, INPUT) == INPUT):
+                if producer['input'] == is_input:
                     created = producer['detection'](uri)
                     if created:
                         logging.info('{} created for uri {}'.format(producer['name'], uri))
@@ -63,7 +64,7 @@ class Factory(object):
                         logging.debug('{} could not handle uri {}'.format(producer['name'], uri))
 
             if created is None:
-                logging.error('No suitable factory found to handle uri {}'.format(uri))
+                logging.error('No suitable factory found to handle {} uri {}'.format('input' if is_input else 'output', uri))
         except KeyError:
             logging.error('No uri provided')
 

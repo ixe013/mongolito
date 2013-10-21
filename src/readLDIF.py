@@ -21,6 +21,7 @@ import errors
 import os
 
 import basegenerator
+import factory
 
 
 class LDIFReader(basegenerator.BaseGenerator): 
@@ -213,3 +214,5 @@ def create_from_uri(uri):
 
     return result
 
+
+factory.Factory().register(type(LDIFReader), create_from_uri)

@@ -118,7 +118,7 @@ def get_connections():
         try : 
             connections[alias[0]] = connections[alias[1]]
         except KeyError: 
-            logging.error('Alias {} requested for non-existing configuration named {}'.format(alias, target))
+            logging.error('Alias {} requested for non-existing configuration named {}'.format(alias[0], alias[1]))
 
     if 'input' not in connections and is_stdin_redirected():
         #Throw in a defautl LDIF output

@@ -41,7 +41,7 @@ class PagedResultsGenerator(object):
         )
         
         while True:
-            rtype, rdata, rmsgid, rctrls = self.result4(msgid)
+            rtype, rdata, rmsgid, rctrls = self.result3(msgid)
 
             for r in rdata:
                 yield r
@@ -251,5 +251,5 @@ def create_from_uri(uri):
     return future_self
 
 #Boilerplate code to register this in the factory
-factory.Factory().register(type(LDAPReader), create_from_uri)
+factory.Factory().register(LDAPReader, create_from_uri)
 

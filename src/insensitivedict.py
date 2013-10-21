@@ -17,7 +17,7 @@ class InsensitiveDict(dict):
         self.data = {}
         self.preserve=preserve
         if source :
-            self.update(dict(source))
+            self.update(source)
 
     def __delitem__(self, key):
         k=self._lowerOrReturn(key)
