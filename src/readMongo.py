@@ -30,7 +30,7 @@ class MongoReader(basegenerator.BaseGenerator):
         self.database = database
         self.collection = collection
 
-    def connect(self):
+    def connect(self, username=None, password=None):
         '''Creates a cursor to the supplied MongoDB database'''
         connection = pymongo.MongoClient(self.host)
 
@@ -144,5 +144,5 @@ def create_from_uri(uri):
     
     return result
 
-factory.Factory().register(type(MongoReader), create_from_uri)
+factory.Factory().register(MongoReader, create_from_uri)
 
