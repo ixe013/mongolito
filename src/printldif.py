@@ -50,11 +50,12 @@ def RFC2849WrappedOuput(attribute, separator, value):
 
 
 class LDIFPrinter(basedestination.BaseDestination):
-    def __init__(self, ldiffile=None, overwrite=True, dontwrap=True, dontencode=False):
+    def __init__(self, ldiffile=None, overwrite=True, dontwrap=True, dontencode=False, chunksize=CHUNK_MAX_VALUES):
         self.ldiffilename = ldiffile
         self.dontwrap = dontwrap
         self.dontencode = dontencode
         self.overwrite = overwrite
+        self.chunksize = chunksize
 
 
     def connect(self):
@@ -195,16 +196,16 @@ class LDIFPrinter(basedestination.BaseDestination):
 
                 #Only so many attributes can fit in a LDIF record
                 #TODO Put back the test of chunked values
-                for value in values[:CHUNK_MAX_VALUES]:
+                for value in values[:self.chunksize]:
                     attribute, separator, value = self.makePrintableAttributeAndValue(name,value)
                     self.printAttributeAndValue(attribute, separator, value)
 
-                if len(values) > CHUNK_MAX_VALUES:
+                if len(values) > self.chunksize:
                     #TODO add another changetype: modify entry with the same dn
                     #(simply wrap the above into a question)
                     self.comment('Warning : there are {0} values for attribute name "{1}".'.format(len(values), name))
                     #Save the attribute for later (but we could just run the list again)
-                    large_attributes[name] = values[CHUNK_MAX_VALUES:]
+                    large_attributes[name] = values[self.chunksize:]
 
                 
         #Ends with an empty line
@@ -215,7 +216,7 @@ class LDIFPrinter(basedestination.BaseDestination):
             #Starting with the last entry we left out
             next_chunk = 0
 
-            while values[next_chunk:next_chunk+CHUNK_MAX_VALUES]:
+            while values[next_chunk:next_chunk+self.chunksize]:
                 #Output a changetype modify header
                 attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
                 self.printAttributeAndValue(attribute, separator, value)
@@ -225,7 +226,7 @@ class LDIFPrinter(basedestination.BaseDestination):
                 self.printAttributeAndValue(attribute, separator, value)
 
                 #For each remaining value (which can also be chunked)
-                for value in values[next_chunk:next_chunk+CHUNK_MAX_VALUES]:
+                for value in values[next_chunk:next_chunk+self.chunksize]:
                     attribute, separator, value = self.makePrintableAttributeAndValue(large_attribute, value)
                     self.printAttributeAndValue(attribute, separator, value)
 
@@ -234,7 +235,7 @@ class LDIFPrinter(basedestination.BaseDestination):
                 #followed by an empty line
                 print >> self.ldiffile
                 
-                next_chunk += CHUNK_MAX_VALUES
+                next_chunk += self.chunksize
                 
 
 def create_from_uri(uri):
