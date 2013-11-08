@@ -56,7 +56,7 @@ class LDIFReader(basegenerator.BaseGenerator):
                 lineCount += c
 
                 #return that object
-                yield ldapObject
+                yield self.sanitize_result(ldapObject)
 
             #Reached the end of the input stream
             else:

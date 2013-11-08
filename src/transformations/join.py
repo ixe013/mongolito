@@ -20,8 +20,7 @@ class JoinMultiValueAttribute(BaseTransformation):
  
     def transform(self, original, ldapobject):
             try:
-                if isinstance(ldapobject[self.attribute], list): 
-                    ldapobject[self.newname] = self.separator.join(ldapobject[self.attribute])
+                ldapobject[self.newname] = [self.separator.join(ldapobject[self.attribute])]
             except KeyError:
                 pass
     

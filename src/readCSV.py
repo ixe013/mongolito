@@ -5,8 +5,10 @@ Reads in a bunch of CSV entries, making a dict out of each line.
 import csv
 import os
 
+import basegenerator
+import factory
 
-class CSVReader(object): 
+class CSVReader(basegenerator.BaseGenerator):
     def __init__(self, ldiffile, delimiter=';', innerseparator='|'):
         self.ldiffile = ldiffile
         self.delimiter = delimiter
@@ -28,7 +30,7 @@ class CSVReader(object):
                 if self.innerseparator in value:
                     ldapobject[key] = value.split(self.innerseparator)
             
-            yield ldapobject
+            yield self.sanitize_result(ldapobject)
 
 
 def create_from_uri(uri):
@@ -50,3 +52,4 @@ def create_from_uri(uri):
     return result
 
 
+factory.Factory().register(CSVReader, create_from_uri)

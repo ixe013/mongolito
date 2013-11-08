@@ -14,7 +14,9 @@ class BaseGenerator(object):
         '''
         for ldapobject in self.search(query, [attribute]):
             try:
-                yield ldapobject[attribute]
+                for single in ldapobject[attribute]:
+                    yield single
+
             except KeyError as ke:
                 if error is not None:
                     raise ke
@@ -57,6 +59,19 @@ class BaseGenerator(object):
         but there for symetry with start'''
         self.disconnect()
         return self
+
+    def sanitize_result(self, raw, dn=None):
+        result = raw
+
+        if dn:
+            result['dn'] = [dn]
+
+        #Make all attributes multi-valued
+        for k,v in result.iteritems():
+            if not isinstance(v, list):
+                result[k] = [v]
+
+        return result
 
     @property 
     def name(self):

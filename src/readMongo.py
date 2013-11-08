@@ -105,8 +105,7 @@ class MongoReader(basegenerator.BaseGenerator):
         #But now that the search method must return a generator, 
         #I make the yield call myself
         for document in cursor:
-            #Will return a generator object
-            yield document
+            yield self.sanitize_result(document)
 
 
 def create_from_uri(uri):

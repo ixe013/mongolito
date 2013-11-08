@@ -59,12 +59,7 @@ class ChangeCase(BaseTransformation):
         try:
             value = ldapobject[self.attribute]
 
-            #If the attribute is multi-valued
-            if isinstance(value, list): 
-                ldapobject[self.attribute] = [re.sub(self.pattern, self.get_case_changer(), v) for v in value]
-            #If the attribute is a string
-            elif isinstance(value, basestring):
-                ldapobject[self.attribute] = re.sub(self.pattern, self.get_case_changer(), value)
+            ldapobject[self.attribute] = [re.sub(self.pattern, self.get_case_changer(), v) for v in value]
 
             #Smart handling of the dn attribute
             if self.attribute == 'dn':

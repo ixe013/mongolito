@@ -28,16 +28,11 @@ class RenameValue(BaseTransformation):
         try:
             value = ldapobject[self.attribute]
 
-            #If the attribute is multi-valued
-            if isinstance(value, list): 
-                ldapobject[self.attribute] = [re.sub(self.pattern, str(self.replacement), v) for v in value]
-            #If the attribute is a string
-            elif isinstance(value, basestring):
-                ldapobject[self.attribute] = re.sub(self.pattern, str(self.replacement), value)
+            ldapobject[self.attribute] = [re.sub(self.pattern, str(self.replacement), v) for v in value]
 
             #Extract and break appart the first component of the dn, so that
             #first_component will be ['ou', 'people'] (for example)
-            first_component = ldapobject['dn'].split(',',1)[0].split('=')
+            first_component = ldapobject['dn'][0].split(',',1)[0].split('=')
 
             #Smart handling of the dn attribute
             if self.attribute == 'dn':
@@ -52,6 +47,8 @@ class RenameValue(BaseTransformation):
             #The attribute name is not a regex, so there can only be
             #one match.
             pass
+        except TypeError as te:
+            raise te
 
         #Return the object, possibly modified                
         return ldapobject

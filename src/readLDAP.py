@@ -73,19 +73,6 @@ class PagedResultsGenerator(object):
 class LDAPObjectStream(ldap.ldapobject.LDAPObject, PagedResultsGenerator):
     pass
 
-def convert_raw_ldap_result(dn, raw):
-    result = {}
-
-    result['dn'] = dn
-
-    for k,v in raw.items():
-        if len(v) == 1:
-            result[k] = v[0]
-        else:
-            result[k] = v
-
-    return result
-
         
 class LDAPReader(basegenerator.BaseGenerator):
     def __init__(self, uri, serverctrls=None):
@@ -230,7 +217,7 @@ class LDAPReader(basegenerator.BaseGenerator):
 
         for dn,entry in result_generator:
             # process dn and entry
-            yield convert_raw_ldap_result(dn, entry)
+            yield self.sanitize_result(entry, dn)
        
 
 def create_from_uri(uri):
