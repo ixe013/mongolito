@@ -31,3 +31,5 @@ class BaseTransformation(object):
         for ldapobject in data:
             yield self.transform(ldapobject)
 
+    def transform(self, original, modified):
+        pass

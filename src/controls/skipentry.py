@@ -7,14 +7,12 @@ from transformations import BaseTransformation
 import errors
 
 class SkipEntry(BaseTransformation):
-    '''Renames a value with a regular expression pattern.
+    """Skips entries whose value(s) match a regular expression
+    for a given attribute.
 
-    Each value in multi-valued attributes are tested for 
-    a match and renamed if necessary.
-
-    '''
+    """
     def __init__(self, attribute, pattern, reverse=False):
-        '''
+        """
         Stops processing (and moves to the next ldap object) if
         a value matches the pattern or not. 
 
@@ -25,15 +23,15 @@ class SkipEntry(BaseTransformation):
             pattern (string): a regex pattern (can be in javascript format /(.*)/) to search
                 in the attribute value(s). Search is always case-insensitive. 
             revers (boolean): If true, non-matching entries will be skipped.
-        '''
+        """
         self.attribute = attribute
         self.pattern = pattern
         self.reverse = reverse
  
     def transform(self, original, ldapobject):
-        '''
+        """
         :data a dictionary reprenting one entry
-        '''
+        """
         value = utils.get_nested_attribute(ldapobject, self.attribute)
 
         #regex are cached, let's use that to our advantage

@@ -12,3 +12,12 @@ class BaseDestination(object):
         self.disconnect()
         return self
 
+    def add(self, original, current, undo=False):
+        pass
+    def delete(self, original, current, undo=False):
+        pass
+
+    def modify(self, original, current, undo=False):
+        pass
+
+

@@ -10,8 +10,8 @@ import factory
 RFC2849_MAX_LINE = 76
 CHUNK_MAX_VALUES = 1337
 
-def RFC2849WrappedOuput(attribute, separator, value):
-#def RFC2849WrappedOuput(attribute, separator, value):
+def RFC2849WrappedOutput(attribute, separator, value):
+#def RFC2849WrappedOutput(attribute, separator, value):
     '''Wraps the value in a RFC2849 compliant manner.
     Returns a array of lines to print.'''
     wrapper = textwrap.TextWrapper()
@@ -37,6 +37,7 @@ def RFC2849WrappedOuput(attribute, separator, value):
     #When we get here, we have it wrapped. But we might have been 
     #unlucky and end up with a line that ends (or begins with a 
     #space. Lets chechk for that.
+    #(startswith 2 spaces because the 1st one is legit)
     if any(l.startswith('  ') or l.endswith(' ') for l in lines):
         #We have a line that should be base64 encoded.
         #the separator is doubled (the attribute stays the same)
@@ -44,7 +45,7 @@ def RFC2849WrappedOuput(attribute, separator, value):
         #but a base64 coded value will never have a leading or
         #trailing space. It will always fail the test on the second
         #try
-        lines = RFC2849WrappedOuput(attribute, separator*2, base64.b64encode(value))
+        lines = RFC2849WrappedOutput(attribute, separator*2, base64.b64encode(value))
         
     return lines
 
@@ -103,6 +104,8 @@ class LDIFPrinter(basedestination.BaseDestination):
         except UnicodeError:
             separator *= 2
             value = base64.b64encode(value)
+        except AttributeError as ae:
+            raise ae
                 
         return attribute, separator, value
 
@@ -111,7 +114,7 @@ class LDIFPrinter(basedestination.BaseDestination):
         if self.dontwrap:
             print >> self.ldiffile, '\n'.join([attribute+separator+' '+value])
         else:
-            print >> self.ldiffile, '\n'.join(RFC2849WrappedOuput(attribute, separator, value))
+            print >> self.ldiffile, '\n'.join(RFC2849WrappedOutput(attribute, separator, value))
 
 
     def write(self, original, ldapobject):
@@ -123,7 +126,10 @@ class LDIFPrinter(basedestination.BaseDestination):
            Hence any valid unsorted ldif will comme out the same way from this 
            method'''
 
-        working_copy = ldapobject.copy()
+        #FIXME : read only operations on ldapobject would save a lot of memory
+        #        when working with large groups
+        #working_copy = ldapobject.copy()
+        working_copy = ldapobject
 
         #dn is always first
         #print 'dn:', working_copy['dn']
@@ -132,7 +138,7 @@ class LDIFPrinter(basedestination.BaseDestination):
         self.printAttributeAndValue(attribute, separator, value)
 
         #Remove the attributes we already printed
-        del working_copy['dn']
+        #del working_copy['dn']
         
         #Change type handling
         try:
@@ -140,7 +146,7 @@ class LDIFPrinter(basedestination.BaseDestination):
             attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
             self.printAttributeAndValue(attribute, separator, value)
 
-            del working_copy['changetype']
+            #del working_copy['changetype']
 
             if change == 'modify':
                 #If changetype is modify, then we have an attribute 
@@ -148,15 +154,15 @@ class LDIFPrinter(basedestination.BaseDestination):
                 if 'replace' in working_copy:
                     attribute, separator, value = self.makePrintableAttributeAndValue('replace',working_copy['replace'])
                     self.printAttributeAndValue(attribute, separator, value)
-                    del working_copy['replace']
+                    #del working_copy['replace']
                 elif 'modify' in working_copy:
                     attribute, separator, value = self.makePrintableAttributeAndValue('modify',working_copy['modify'])
                     self.printAttributeAndValue(attribute, separator, value)
-                    del working_copy['modify']
+                    #del working_copy['modify']
             elif change == 'delete':
                 #For a changetype delete, no other attributes are needed. The delete statement is
                 #already printed, so the only thing left to do is to remove all other attributes
-                #and let an empty dict fall through the code
+                #and let an empty dict fall through the code (for printing)
                 working_copy = {}
                     
         except KeyError:
@@ -175,7 +181,7 @@ class LDIFPrinter(basedestination.BaseDestination):
             for objclass in sorted(objectclasses):
                 attribute, separator, value = self.makePrintableAttributeAndValue('objectclass',objclass)
                 self.printAttributeAndValue(attribute, separator, value)
-            del working_copy['objectclass']
+            #del working_copy['objectclass']
         except KeyError:
             #object class is not mandatory
             pass
@@ -184,6 +190,9 @@ class LDIFPrinter(basedestination.BaseDestination):
 
         #This loops prints what is left
         for name in sorted(working_copy.keys()):
+            if name.lower() in ['dn', 'objectclass', 'changetype','replace', 'modify']:
+                continue
+
             #Must check type instead of begging for forgiveness
             #because string is iterable but will not produce the
             #output we are looking for
@@ -213,30 +222,43 @@ class LDIFPrinter(basedestination.BaseDestination):
 
         #For each attribute that had too many values
         for large_attribute, values in large_attributes.items():
-            #Starting with the last entry we left out
-            next_chunk = 0
-
-            while values[next_chunk:next_chunk+self.chunksize]:
-                #Output a changetype modify header
-                attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
-                self.printAttributeAndValue(attribute, separator, value)
-                attribute, separator, value = self.makePrintableAttributeAndValue('changetype','modify')
-                self.printAttributeAndValue(attribute, separator, value)
-                attribute, separator, value = self.makePrintableAttributeAndValue('add',large_attribute)
-                self.printAttributeAndValue(attribute, separator, value)
-
-                #For each remaining value (which can also be chunked)
-                for value in values[next_chunk:next_chunk+self.chunksize]:
-                    attribute, separator, value = self.makePrintableAttributeAndValue(large_attribute, value)
-                    self.printAttributeAndValue(attribute, separator, value)
-
-                #Ends with a separator
-                print >> self.ldiffile, '-'
-                #followed by an empty line
-                print >> self.ldiffile
+            self.add_values_to_attribute(dn, large_attribute, values)
                 
-                next_chunk += self.chunksize
-                
+    def output(self, name, val):
+        attribute, separator, value = self.makePrintableAttributeAndValue(name, val)
+        self.printAttributeAndValue(attribute, separator, value)
+
+    def add_values_to_attribute(self, dn, attribute, values):
+        next_chunk = 0
+        if isinstance(values, basestring):
+            array_of_values = [values]
+        else:
+            array_of_values = values
+
+        while array_of_values[next_chunk:next_chunk+self.chunksize]:
+            #Output a changetype modify header
+            self.output('dn', dn)
+            self.output('changetype','modify')
+            self.output('add', attribute)
+
+            #For each remaining value (which can also be chunked)
+            for value in array_of_values[next_chunk:next_chunk+self.chunksize]:
+                self.output(attribute, value)
+
+            #Ends with a separator
+            print >> self.ldiffile, '-'
+            #followed by an empty line
+            print >> self.ldiffile
+            
+            next_chunk += self.chunksize
+
+
+    def add(self, original, ldapobject):
+        attributes_to_add = ldapobject['add']
+        for attribute in attributes_to_add:
+            ###### ICI LA VALEUR EST DECOUPEE EN CARACTERES ######
+            self.add_values_to_attribute(ldapobject['dn'], attribute, ldapobject[attribute])
+
 
 def create_from_uri(uri):
     '''

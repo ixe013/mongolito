@@ -18,6 +18,7 @@ import printldif
 import saveInMongo
 import errors
 
+from controls.changetype import ChangeType
 
 __all__ = [
     'initialize',
@@ -61,6 +62,10 @@ def process(istream, ostream, showprogress=True):
         #each time we skip an object
         num_objects = 0
         for ldapobject in generator:
+            #FIXME : Generator filtering should be a class
+            #Generator does not decide of changetype, rules do
+            ldapobject.pop('changetype', None)
+
             for rules, output, undo in ostream:
                 #The original ldapobject that will be sent to the methods must not be 
                 #modified. It is an interface contract, because technically speaking
@@ -89,11 +94,22 @@ def process(istream, ostream, showprogress=True):
                         logging.warning('No metadata found for object {}'.format(current['dn']))
                         pass
 
+                    #Changetype defaults to add, like ldapmodify does, sort of
+                    #FIXME : defaults to legacy handling with write
+                    changetype = current.get('changetype')
+
                     if output:
-                        output.write(original, current)
+                        if changetype==ChangeType.add:
+                            for attribute_to_add in current[ChangeType.add]:
+                                if attribute_to_add in current:
+                                    output.add(original, current)
+                        else:
+                            #FIXME : Legacy, remove when others are done
+                            output.write(original, current)
 
                     if undo:
                         #FIXME : This should be a dict difference, enabling true CRUD undo
+                        #See this implementation : https://github.com/hughdbrown/dictdiffer
                         current['changetype'] = 'delete'
                         #but this single line works in most scenarios
                         undo.write(original, current)
