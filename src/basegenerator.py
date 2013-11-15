@@ -27,6 +27,17 @@ class BaseGenerator(object):
         '''
         return self.search(query, attributes)
 
+    def connect(username, password):
+        """
+        Empty placeholder. Most implementations will override this
+        with code that establish a connection.
+        """
+        pass
+
+    def disconnect():
+        """Empty placeholder"""
+        pass
+
     def start(self, username=None, password=None, name=None):
         '''Generic method that wraps connect and handles prompting the user 
         for a password if required.

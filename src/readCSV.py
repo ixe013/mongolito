@@ -14,22 +14,16 @@ class CSVReader(basegenerator.BaseGenerator):
         self.delimiter = delimiter
         self.innerseparator = innerseparator
 
-
-
-    #FIXME : should be in base class, mixin or similar
-    def connect(self):
-        return self
-
-    #FIXME : should be in base class, mixin or similar
-    def disconnect(self):
-        return self
-
     def search(self, query = {}):
         for ldapobject in csv.DictReader(self.ldiffile, delimiter=self.delimiter):
             for key, value in ldapobject.iteritems():
                 if self.innerseparator in value:
-                    ldapobject[key] = value.split(self.innerseparator)
+                    ldapobject.setdefault(key, []).extend(value.split(self.innerseparator))
+                else:
+                    ldapobject.setdefault(key, []).append(self.attribute)
             
+            #FIXME : query is ignored, should be sent through a generic 
+            #post processing filter
             yield self.sanitize_result(ldapobject)
 
 
