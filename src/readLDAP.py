@@ -167,7 +167,7 @@ class LDAPReader(basegenerator.BaseGenerator):
         try:
             rdn = query['mongolito.rdn']
             #FIXME : What if cn is not used (or replaced with uid?)
-            result += '(cn={0})'.format(rdn)
+            result += '(cn={0})'.format(utils.simple_pattern_from_javascript(rdn))
             del query['mongolito.rdn']
         except KeyError:
             pass

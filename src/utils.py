@@ -174,6 +174,39 @@ def regex_from_javascript(pattern, insensitive=True):
     
     return regex
 
+def simple_pattern_from_javascript(pattern):
+    '''Converts a javascript style regular expression to a 
+    glob-like pattern suitable for LDAP an most filesystems
+
+    Defaults to case insensitive. The trailing i is ignored, use
+    the insensitive parameter.
+
+    '''
+    
+    _pattern = pattern_from_javascript(pattern)
+
+    if _pattern.startswith('^'): 
+        #Remove the first character to make it
+        #anchored to the line's begining
+        _pattern = _pattern[1:]
+    else:
+        #Replace the first character with a *
+        #because we are not anchored to the line's
+        #begining
+        _pattern = '*'+_pattern[1:]
+
+    if pattern.endswith('$'):
+        #Remove the last character will make it
+        #anchored to the line's end.
+        _pattern = _pattern[:-1]
+    else:
+        #Make the last character with a star
+        #because we are not anchored to the line's 
+        #end
+        _pattern = _pattern+'*'
+
+    return _pattern
+    
 def pattern_from_javascript(pattern):
     '''Converts a javascript style regular expression to a 
     mongo regular expression suitable for in place replacement.
