@@ -167,8 +167,6 @@ class LDAPReader(basegenerator.BaseGenerator):
         #convert objectClass first, as it is indexed (most of the time)
         try:
             result = self.convert_query_element('objectClass', query['objectClass'])
-    
-            del query['objectClass']
             
         except KeyError:
             #We don't care about objectClass, unusual but valid
@@ -180,9 +178,9 @@ class LDAPReader(basegenerator.BaseGenerator):
         try:
             rdn = query['mongolito.rdn']
             #FIXME : What if cn is not used (or replaced with uid?)
-            result += '(cn={0})'.format(rdn)
-            del query['mongolito.rdn']
+            query['cn'] = rdn
         except KeyError:
+            #Not using mongolito.rdn
             pass
 
         #then the path
@@ -194,12 +192,13 @@ class LDAPReader(basegenerator.BaseGenerator):
             #For now, we just use the path as the base (which we must flip). We also
             #ignore the leading ^, if present
             base = utils.reverse_path(utils.pattern_from_javascript(path).lstrip('^'))
-            del query['mongolito.parent']
         except KeyError:
             pass
 
         #Convert other attributes
         for k, v in query.items():
+            if k.startswith('mongolito'):
+                continue
             result += self.convert_query_element(k, v)
             
         return base, '(&{0})'.format(result)
@@ -223,10 +222,10 @@ class LDAPReader(basegenerator.BaseGenerator):
 
 
     def search(self, query = {}, attributes=[]):
-        base, query = self.convert_query(copy.deepcopy(query))
+        base, ldapquery = self.convert_query(query)
 
         #Async paged search
-        result_generator = self.connection.paged_search_ext_s(base, ldap.SCOPE_SUBTREE, query, attrlist=attributes, serverctrls=self.serverctrls)
+        result_generator = self.connection.paged_search_ext_s(base, ldap.SCOPE_SUBTREE, ldapquery, attrlist=attributes, serverctrls=self.serverctrls)
 
         for dn,entry in result_generator:
             # process dn and entry

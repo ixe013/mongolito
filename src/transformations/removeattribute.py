@@ -14,6 +14,7 @@ class RemoveAttribute(BaseTransformation):
  
     def transform(self, original, ldapobject):
             try:
+                #FIXME : would be nice to have a regex here, but we loose the index
                 del ldapobject[self.attribute]
             except KeyError:
                 pass
