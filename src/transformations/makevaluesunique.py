@@ -5,32 +5,22 @@ class MakeValuesUnique(BaseTransformation):
         self.attribute = attribute
 
     def transform(self, original, ldapobject):
-        '''Alex Martelli, order preserving. 
-        Found at http://www.peterbe.com/plog/uniqifiers-benchmark
-
-        '''
-        seen = {}
-        result = []
+        """
+        If the attribute is present, makes all values it 
+        contains unique. Does not preserve order.
+        """
+        seen = set()
 
         try:
             for item in ldapobject[self.attribute]:
-                marker = item
-                # in old Python versions:
-                # if seen.has_key(marker)
-                # but in new ones:
-                if marker in seen: continue
-                seen[marker] = 1
-                result.append(item)
+                if item not in seen: 
+                    seen.add(item)
 
-            #Maybe we merged everything to a single item
-            if len(result) == 1:
-                #If so, make it single valued
-                ldapobject[self.attribute] = result[0]
-            else:
-                #save the new list
-                ldapobject[self.attribute] = result
+            #save the new list
+            ldapobject[self.attribute] = list(seen)
 
         except KeyError:
+            #The attribute does not exist
             pass
 
         return ldapobject

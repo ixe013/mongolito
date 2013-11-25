@@ -19,17 +19,8 @@ class AddAttribute(BaseTransformation):
         :data a dictionary reprenting one entry
         '''
         try:
-            #Do we have a multi-value attribute ?
-            if isinstance(ldapobject[self.attribute], list):
-                ldapobject[self.attribute].append(str(self.value))
-            #else we have a single-value that becomes multi-valued
-            else:
-                ldapobject[self.attribute] = [ldapobject[self.attribute], str(self.value)]
+            ldapobject[self.attribute].append(str(self.value))
         except KeyError:
-            #We dit not have that value, add it
-            if isinstance(self.value, list):
-                ldapobject[self.attribute] = [str(x) for x in self.value]
-            else:            
-                ldapobject[self.attribute] = str(self.value)
+            ldapobject[self.attribute] = [str(x) for x in self.value]
 
         return ldapobject

@@ -126,40 +126,26 @@ class LDIFPrinter(basedestination.BaseDestination):
            Hence any valid unsorted ldif will comme out the same way from this 
            method'''
 
-        #FIXME : read only operations on ldapobject would save a lot of memory
-        #        when working with large groups
-        #working_copy = ldapobject.copy()
         working_copy = ldapobject
 
         #dn is always first
-        #print 'dn:', working_copy['dn']
-        dn = working_copy['dn'] 
-        attribute, separator, value = self.makePrintableAttributeAndValue('dn',dn)
-        self.printAttributeAndValue(attribute, separator, value)
+        dn = working_copy['dn'][0] 
+        self.output('dn', dn)
 
-        #Remove the attributes we already printed
-        #del working_copy['dn']
-        
         #Change type handling
         try:
             change = working_copy['changetype']
-            attribute, separator, value = self.makePrintableAttributeAndValue('changetype',change)
-            self.printAttributeAndValue(attribute, separator, value)
-
-            #del working_copy['changetype']
+            self.output('changetype',change)
 
             if change == 'modify':
                 #If changetype is modify, then we have an attribute 
                 #that is either replace, modify or delete
                 if 'replace' in working_copy:
-                    attribute, separator, value = self.makePrintableAttributeAndValue('replace',working_copy['replace'])
-                    self.printAttributeAndValue(attribute, separator, value)
-                    #del working_copy['replace']
+                    self.output('replace',working_copy['replace'])
                 elif 'modify' in working_copy:
-                    attribute, separator, value = self.makePrintableAttributeAndValue('modify',working_copy['modify'])
-                    self.printAttributeAndValue(attribute, separator, value)
-                    #del working_copy['modify']
+                    self.output('modify', working_copy['modify'])
             elif change == 'delete':
+                #FIXME : Kludge. Proper handling of changetype: delete should fix this
                 #For a changetype delete, no other attributes are needed. The delete statement is
                 #already printed, so the only thing left to do is to remove all other attributes
                 #and let an empty dict fall through the code (for printing)
@@ -168,8 +154,7 @@ class LDIFPrinter(basedestination.BaseDestination):
         except KeyError:
             #This a changetype add, we add it
             #Defaults to change type add
-            attribute, separator, value = self.makePrintableAttributeAndValue('changetype','add')
-            self.printAttributeAndValue(attribute, separator, value)
+            self.output('changetype','add')
 
         #Now with the object classes
         try:
@@ -179,9 +164,7 @@ class LDIFPrinter(basedestination.BaseDestination):
                 objectclasses = [objectclasses]
 
             for objclass in sorted(objectclasses):
-                attribute, separator, value = self.makePrintableAttributeAndValue('objectclass',objclass)
-                self.printAttributeAndValue(attribute, separator, value)
-            #del working_copy['objectclass']
+                self.output('objectclass', objclass)
         except KeyError:
             #object class is not mandatory
             pass
@@ -197,8 +180,7 @@ class LDIFPrinter(basedestination.BaseDestination):
             #because string is iterable but will not produce the
             #output we are looking for
             if isinstance(working_copy[name], basestring):
-                attribute, separator, value = self.makePrintableAttributeAndValue(name,working_copy[name])
-                self.printAttributeAndValue(attribute, separator, value)
+                self.output(name,working_copy[name])
             else:
                 #Print values prefixed with attribute name, sorted, unique
                 values = sorted(set(working_copy[name]))
@@ -206,8 +188,7 @@ class LDIFPrinter(basedestination.BaseDestination):
                 #Only so many attributes can fit in a LDIF record
                 #TODO Put back the test of chunked values
                 for value in values[:self.chunksize]:
-                    attribute, separator, value = self.makePrintableAttributeAndValue(name,value)
-                    self.printAttributeAndValue(attribute, separator, value)
+                    self.output(name,value)
 
                 if len(values) > self.chunksize:
                     #TODO add another changetype: modify entry with the same dn
@@ -225,8 +206,12 @@ class LDIFPrinter(basedestination.BaseDestination):
             self.add_values_to_attribute(dn, large_attribute, values)
                 
     def output(self, name, val):
-        attribute, separator, value = self.makePrintableAttributeAndValue(name, val)
-        self.printAttributeAndValue(attribute, separator, value)
+        if isinstance(val,list):
+            for v in val:
+                self.output(name, v)
+        else:
+            attribute, separator, value = self.makePrintableAttributeAndValue(name, val)
+            self.printAttributeAndValue(attribute, separator, value)
 
     def add_values_to_attribute(self, dn, attribute, values):
         next_chunk = 0

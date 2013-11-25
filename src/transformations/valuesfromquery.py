@@ -95,7 +95,7 @@ class ValuesFromQuery(BaseTransformation):
 
                 #Build an array of values. Most of the time, only
                 #one result will be returned
-                new_results = [r for r in self.source.get_attribute(query, self.selected)]
+                new_results = self.source.get_attribute(query, self.selected)
                 
                 if new_results:
                     results.extend(new_results)
@@ -122,23 +122,15 @@ class ValuesFromQuery(BaseTransformation):
         try:
             results = []
             
-            value = ldapobject[self.attribute]
-            if isinstance(value, basestring):
-                results = self.execute_query(value)
-            else:
-                #For each value of the attribute we want to replace
-                for v in value:
-                    results.extend(self.execute_query(v))
+            #For each value of the attribute we want to replace
+            for value in ldapobject[self.attribute]:
+                results.extend(self.execute_query(value))
 
-            if not results:
+            if results:
+                ldapobject[self.attribute] = results
+            else:
                 #We delete the attribute if it is empty
                 del ldapobject[self.attribute]
-            elif len(results) == 1:
-                #Or make it single valued
-                ldapobject[self.attribute] = results[0]
-            else:
-                #or save it as is
-                ldapobject[self.attribute] = results
             
         except KeyError:
             #The attribute we want to replace is absent from ldapobject

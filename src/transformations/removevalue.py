@@ -15,6 +15,7 @@ class RemoveValue(BaseTransformation):
     def __init__(self, attribute, value):
         '''
         >>>remover = RemoveValue('objectClass', 'irrelevant')
+        >>>remover = RemoveValue('objectClass', '/^irrelevant.*expression$/')
 
         :attribute the name of the attribute from which a value must be removed
         :value the value to be removed. Can be a regular expression enclosed in //
@@ -29,31 +30,13 @@ class RemoveValue(BaseTransformation):
         #For each dictionary object to process
         #For each key value pair in the orginal dict
         try:
-            value = ldapobject[self.attribute]
-
-            #If the attribute is multi-valued
-            if isinstance(value, list): 
-                #Remove the value
-                new_value = filter(lambda v: not self.pattern.search(v), value)
-                #Make a single item list into that item
-                if len(new_value)==1:
-                    ldapobject[self.attribute] = new_value[0]
-                #Delete the attribute if it was the last item
-                elif len(new_value)==0:
-                    del ldapobject[self.attribute]
-                #Or save the remaining items from the list
-                else:
-                    ldapobject[self.attribute] = new_value
-
-            #If the attribute is a string
-            elif isinstance(value, basestring):
+            for value in ldapobject[self.attribute]:
                 if self.pattern.search(value):
-                    del ldapobject[self.attribute]
-            else:
-                #TODO: Could we remove a binary value, based on certain criteria ?
-                #Maybe we could look for certain fieds in a certificate, or images
-                #of a certain size, etc.
-                pass
+                    #This value matches the pattern, remove it
+                    ldapobject[self.attribute].remove(value)
+                    
+            if not ldapobject[self.attribute]:
+                del ldapobject[self.attribute]
 
         except KeyError:
             #The attribute name is not a regex, so there can only be
