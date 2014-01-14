@@ -105,6 +105,7 @@ class MongoReader(basegenerator.BaseGenerator):
         #But now that the search method must return a generator, 
         #I make the yield call myself
         for document in cursor:
+            logging.debug('MongoDB search started')
             yield self.sanitize_result(document)
 
 

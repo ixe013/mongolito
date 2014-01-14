@@ -75,6 +75,7 @@ class ValuesFromQuery(BaseTransformation):
             results = []
 
             if self.cache_enabled:
+                logging.debug('Looking for cached entry...')
                 #Prime the results with the cache 
                 results = [self.cache[key] for key in set(values) & set(self.cache)]
                 
@@ -87,22 +88,29 @@ class ValuesFromQuery(BaseTransformation):
 
             #If there are values that were not found in the cache
             if values:
+                if self.cache_enabled:
+                    logging.info('Cache miss for {}'.format(values))
+
                 #We must translate any place holders
+                logging.debug('Preparing subquery')
                 query = self.set_query_values(values)
 
+                #Keep count even if the cache is disabled
                 self.cache['__miss'] += len(values)  
-                logging.info('Cache miss for {}'.format(values))
 
                 #Build an array of values. Most of the time, only
                 #one result will be returned
+                logging.debug('Getting attribute {} from subquery'.format(self.selected))
                 new_results = self.source.get_attribute(query, self.selected)
                 
                 if new_results:
+                    logging.debug('Merging result(s) to object')
                     results.extend(new_results)
                 else:
                     logging.warning('Subquery failed for {}'.format(values))
 
                 if self.cache_enabled:
+                    logging.debug('Updating cache with latests results')
                     #Add the new results to the cache, along with the entries not found
                     self.cache.update(dict(zip(values, new_results or itertools.repeat(None))))
 
@@ -124,13 +132,17 @@ class ValuesFromQuery(BaseTransformation):
             
             #For each value of the attribute we want to replace
             for value in ldapobject[self.attribute]:
+                logging.debug('About to query {}'.format(value))
                 results.extend(self.execute_query(value))
 
             if results:
+                logging.debug('Query returned {}'.format(value))
                 ldapobject[self.attribute] = results
             else:
                 #We delete the attribute if it is empty
+                logging.debug('Query did return any results')
                 del ldapobject[self.attribute]
+
             
         except KeyError:
             #The attribute we want to replace is absent from ldapobject

@@ -185,25 +185,31 @@ def simple_pattern_from_javascript(pattern):
     
     _pattern = pattern_from_javascript(pattern)
 
-    if _pattern.startswith('^'): 
-        #Remove the first character to make it
-        #anchored to the line's begining
-        _pattern = _pattern[1:]
-    else:
-        #Replace the first character with a *
-        #because we are not anchored to the line's
-        #begining
-        _pattern = '*'+_pattern[1:]
+    if not _pattern == pattern:
+        #The pattern we received was indeed a javascript pattern
+        #Let's take care of it
+        if _pattern.startswith('^'): 
+            #Remove the first character to make it
+            #anchored to the line's begining
+            _pattern = _pattern[1:]
+        else:
+            #Replace the first character with a *
+            #because we are not anchored to the line's
+            #begining
+            _pattern = '*'+_pattern
 
-    if pattern.endswith('$'):
-        #Remove the last character will make it
-        #anchored to the line's end.
-        _pattern = _pattern[:-1]
+        if pattern.endswith('$'):
+            #Remove the last character will make it
+            #anchored to the line's end.
+            _pattern = _pattern[:-1]
+        else:
+            #Make the last character with a star
+            #because we are not anchored to the line's 
+            #end
+            _pattern = _pattern+'*'
     else:
-        #Make the last character with a star
-        #because we are not anchored to the line's 
-        #end
-        _pattern = _pattern+'*'
+        #We received a plain string, we simply return it
+        pass
 
     return _pattern
     
@@ -243,5 +249,8 @@ def get_nested_attribute(ldapobject, attribute):
     except ValueError:
         #We've hit the last pert of the key, return that
         #Might raise a KeyError, just a like a dict.
-        return ldapobject[attribute]
+        #The ValueError means that we were not able to unpack
+        #The dictionary we are looking for in the first element
+        #of the previous object. So we select element [0] 
+        return ldapobject[0][attribute]
     

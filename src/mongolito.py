@@ -84,8 +84,11 @@ def process(istream, ostream, showprogress=True):
                 current = insensitivedict.InsensitiveDict(copy.deepcopy(ldapobject))    
 
                 try:
+                    logging.debug('Processing {}'.format(original['dn']))
                     for rule in rules:
                         rule.transform(original, current)    
+
+                    logging.debug('Done with the rules. {} --> {}'.format(original['dn'], current['dn']))
 
                     try:
                         #Remove the metadata
@@ -99,6 +102,7 @@ def process(istream, ostream, showprogress=True):
                     changetype = current.get('changetype')
 
                     if output:
+                        logging.debug('About to ouput {}'.format(current['dn']))
                         if changetype==ChangeType.add:
                             for attribute_to_add in current[ChangeType.add]:
                                 if attribute_to_add in current:
@@ -108,11 +112,15 @@ def process(istream, ostream, showprogress=True):
                             output.write(original, current)
 
                     if undo:
+                        logging.debug('About to emit undo operation for {}'.format(current['dn']))
                         #FIXME : This should be a dict difference, enabling true CRUD undo
                         #See this implementation : https://github.com/hughdbrown/dictdiffer
                         current['changetype'] = 'delete'
                         #but this single line works in most scenarios
                         undo.write(original, current)
+
+                    logging.debug('Processing {} finished'.format(original['dn']))
+
 
                 except errors.SkipObjectException:
                     #That object will not count in the total

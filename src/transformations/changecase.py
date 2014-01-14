@@ -65,14 +65,14 @@ class ChangeCase(BaseTransformation):
             if self.attribute == 'dn':
                 #Extract and break appart the first component of the dn, so that
                 #first_component will be ['ou', 'people'] (for example)
-                first_component = ldapobject['dn'].split(',',1)[0].split('=')
+                first_component = ldapobject['dn'][0].split(',',1)[0].split('=')
 
                 #Split all the components by comma, 
                 #then split the first one by equal sign
                 #so dc=www,dc=example,dc=com will change
                 #{ 'dc':'www' } in ldapobject
                 #TODO Mention in the documentation that smart handling of dn will overrite multi-values
-                ldapobject[first_component[0]] = first_component[1]
+                ldapobject[first_component[0]] = [first_component[1]]
                     
         except KeyError:
             #The attribute name is not a regex, so there can only be

@@ -21,6 +21,10 @@ class AddAttribute(BaseTransformation):
         try:
             ldapobject[self.attribute].append(str(self.value))
         except KeyError:
-            ldapobject[self.attribute] = [str(x) for x in self.value]
+            #This is a new attribute for that object
+            if isinstance(self.value, basestring):
+                ldapobject[self.attribute] = [self.value]
+            else:
+                ldapobject[self.attribute] = [str(x) for x in self.value]
 
         return ldapobject

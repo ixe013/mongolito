@@ -41,7 +41,7 @@ class RenameValue(BaseTransformation):
                 #so dc=www,dc=example,dc=com will change
                 #{ 'dc':'www' } in ldapobject
                 #DOCS: Mention that smart handling of dn will overrite multi-values
-                ldapobject[first_component[0]] = first_component[1]
+                ldapobject[first_component[0]] = [first_component[1]]
                     
         except KeyError:
             #The attribute name is not a regex, so there can only be
