@@ -23,7 +23,7 @@ class AddAttribute(BaseTransformation):
         except KeyError:
             #This is a new attribute for that object
             if isinstance(self.value, basestring):
-                ldapobject[self.attribute] = [self.value]
+                ldapobject[self.attribute] = [str(self.value)]
             else:
                 ldapobject[self.attribute] = [str(x) for x in self.value]
 
