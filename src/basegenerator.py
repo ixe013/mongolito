@@ -27,14 +27,14 @@ class BaseGenerator(object):
         '''
         return self.search(query, attributes)
 
-    def connect(username, password):
+    def connect(self, username, password):
         """
         Empty placeholder. Most implementations will override this
         with code that establish a connection.
         """
         pass
 
-    def disconnect():
+    def disconnect(self):
         """Empty placeholder"""
         pass
 
@@ -86,4 +86,4 @@ class BaseGenerator(object):
 
     @property 
     def name(self):
-        return self._name
+        return self.__class__.__name__

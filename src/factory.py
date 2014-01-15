@@ -51,8 +51,8 @@ class Factory(object):
         created = None
         try:
             uri = params['uri']
+            is_input = params.get(TYPE, INPUT) == INPUT
             for producer in self.factories:
-                is_input = params.get(TYPE, INPUT) == INPUT
                 #If the producer's type is the same as the type attribute
                 #in the param dict
                 if producer['input'] == is_input:

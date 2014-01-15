@@ -28,8 +28,8 @@ class LDIFReader(basegenerator.BaseGenerator):
     def __init__(self, ldiffile):
         self.ldiffile = ldiffile
 
-    def connect(self):
-        if not sefl.ldiffile:
+    def connect(self, username=None, password=None):
+        if not self.ldiffile:
             self.ldiffile = sys.stdin
         else:
             self.ldiffile = open(self.ldiffile, 'r')
@@ -215,4 +215,4 @@ def create_from_uri(uri):
     return result
 
 
-factory.Factory().register(type(LDIFReader), create_from_uri)
+factory.Factory().register(LDIFReader, create_from_uri)

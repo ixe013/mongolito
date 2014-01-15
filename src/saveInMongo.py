@@ -3,7 +3,8 @@ import logging
 import pymongo
 import string
  
-import baseproducer
+import factory
+import basedestination
 import utils
 
 class SaveException(Exception):
@@ -15,8 +16,7 @@ class SaveException(Exception):
     def __str__(self):
         return 'Error line %d "%s" : %s' % (self.line, self.dn, self.message)
 
-
-class MongoWriter(baseproducer.BaseProducer):
+class MongoWriter(basedestination.BaseDestination):
     def __init__(self, host, database, collection):
         'Returs a callable object that will save ldap objects to a Mongo database'
         connection = pymongo.MongoClient(host)
@@ -34,7 +34,11 @@ class MongoWriter(baseproducer.BaseProducer):
         
         '''
         if isinstance(value, list):
-            value = [self.convert_to_mongo_datatype(v) for v in value]
+            if len(value) > 1:
+                value = [self.convert_to_mongo_datatype(v) for v in value]
+            else:
+                value = self.convert_to_mongo_datatype(value[0])
+
         elif isinstance(value, bytearray):
             value = bson.binary.Binary(str(value))
 
@@ -56,12 +60,12 @@ class MongoWriter(baseproducer.BaseProducer):
             #We use a specification so that multiple imports does not
             #create multiple objects. Making the dn the _id also works
             #but it makes everybody in the pipeline aware of the hack.
-            spec = { 'dn' : ldapobject['dn'] }
+            spec = { 'dn' : ldapobject['dn'][0] }
             #Insert private metadata that we will use later
             #The mongolito.parent field allows to sort results so that
             #parents are always created first
             
-            utils.add_metadata(ldapobject, ldapobject['dn'])
+            utils.add_metadata(ldapobject, ldapobject['dn'][0])
             
             #I though there would be an implict conversion to dict, but
             #there is not. Let's make one.
@@ -124,6 +128,5 @@ def create_from_uri(uri):
     
     return result
 
-def create_undo_from_uri(uri):
-    #TODO
-    return None
+factory.Factory().register(MongoWriter, create_from_uri)
+

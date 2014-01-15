@@ -121,12 +121,7 @@ def create_from_uri(uri):
     try:
         import pymongo
 
-        try:
-            mongo_uri, name = uri.rsplit('#',1)
-        except ValueError:
-            logging.error('Append the collection name at the end of the URI, with a #, like this: {0}#collection'.format(uri))
-            raise pymongo.errors.InvalidURI(uri)
-            
+        mongo_uri, name = uri.rsplit('#',1)
         parsed_uri = pymongo.uri_parser.parse_uri(mongo_uri)
 
         node = parsed_uri['nodelist'][0]
@@ -140,7 +135,11 @@ def create_from_uri(uri):
 
     except pymongo.errors.InvalidURI as iu:
         #Not for us or malformed
-        logging.debug('Malformed mongo uri. See http://docs.mongodb.org/manual/reference/connection-string/')
+        logging.error('Malformed mongo uri. See http://docs.mongodb.org/manual/reference/connection-string/')
+
+    except ValueError:
+        logging.error('Append the collection name at the end of the URI, with a #, like this: {0}#collection'.format(uri))
+        #raise pymongo.errors.InvalidURI(uri)
     
     return result
 
