@@ -102,6 +102,9 @@ class ValuesFromQuery(BaseTransformation):
                 #one result will be returned
                 logging.debug('Getting attribute {} from subquery'.format(self.selected))
                 new_results = self.source.get_attribute(query, self.selected)
+                #The statement above returns a generator expression. The query hasn't been executed yet!
+                #We force it to execute
+                new_results = [ r for r in new_results]
                 
                 if new_results:
                     logging.debug('Merging result(s) to object')
