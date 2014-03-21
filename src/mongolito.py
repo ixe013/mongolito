@@ -16,6 +16,7 @@ import readLDAP
 import readMongo
 import printldif
 import saveInMongo
+import saveInShelve
 import errors
 
 from controls.changetype import ChangeType

@@ -14,7 +14,11 @@ class BaseDestination(object):
 
     def add(self, original, current, undo=False):
         pass
+
     def delete(self, original, current, undo=False):
+        pass
+
+    def comment(self, xxx):
         pass
 
     def modify(self, original, current, undo=False):

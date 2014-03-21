@@ -185,6 +185,18 @@ class LDAPReader(basegenerator.BaseGenerator):
         except KeyError:
             pass
 
+        try:
+            path = query['mongolito.path']
+            #We are replacing the base
+            #Look at something along those lines
+            #http://stackoverflow.com/a/14128905/591064
+            #For now, we just use the path as the base (which we must flip). We also
+            #ignore the leading ^, if present
+            base = utils.pattern_from_javascript(path).lstrip('^')
+            del query['mongolito.path']
+        except KeyError:
+            pass
+
         #Convert other attributes
         for k, v in query.items():
             result += self.convert_query_element(k, v)
