@@ -24,6 +24,9 @@ class PagedResultsGenerator(object):
         https://bitbucket.org/jaraco/python-ldap/src/f208b6338a28/Demo/paged_search_ext_s.py
         Converted to a generator
         
+        Added range support based on :
+        http://stackoverflow.com/a/1711862/591064
+
         """
         req_ctrl = SimplePagedResultsControl(True,size=page_size,cookie='')
       
@@ -43,8 +46,43 @@ class PagedResultsGenerator(object):
         while True:
             rtype, rdata, rmsgid, rctrls = self.result3(msgid)
 
-            for r in rdata:
-                yield r
+            #singleresult is a list of pyldap tuple in the form [(dn, dict),(dn,dict)]
+            for singleresult in rdata:
+                #Range support idea found on StackOverflow
+                #http://stackoverflow.com/a/1711862/591064#
+                dn = singleresult[0]
+             
+                for attrname in singleresult[1]:
+                    if ';range=' in attrname:
+                      #
+                      # parse range attr
+                      #
+                      actual_attrname, range_stmt = attrname.split(';')
+                      bound_lower, bound_upper = [
+                        int(x) for x in range_stmt.split('=')[1].split('-')
+                      ]
+             
+                      step = bound_upper - bound_lower + 1
+                      while True:
+                        attr_next = '%s;range=%d-%d' % (
+                          actual_attrname, bound_lower, bound_upper
+                        )
+             
+                        dn, attrs = self.search_s(
+                          dn, ldap.SCOPE_BASE, attrlist = [attr_next])[0]
+             
+                        assert len(attrs) == 1
+             
+                        ret_attrname = attrs.keys()[0]
+             
+                        singleresult[1][actual_attrname].extend(attrs[ret_attrname])
+                        if ret_attrname.endswith('-*'):
+                          break
+             
+                        bound_lower = bound_upper + 1
+                        bound_upper += step
+
+                yield singleresult
           
             # Extract the simple paged results response control
             pctrls = [
