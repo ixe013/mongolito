@@ -148,7 +148,7 @@ def compute_parent(dn):
     return ','.join(components[:-1]).lower()
 
 def extractRDN(dn):
-    return dn.split(',',1)[0].split('=')[1].lower()
+    return dn.split(',',1)[0].split('=')[1]
 
 def add_metadata(ldapobject, dn):
     ldapobject['mongolito'] = { 'parent':compute_parent(dn),
@@ -159,7 +159,7 @@ def add_metadata(ldapobject, dn):
     #For example, an object with this dn 
     #  cn=USER,ou=people,dc=example,dc=com will
     #mongolito.rdn will be 'user'
-    ldapobject['mongolito']['rdn'] = extractRDN(dn)
+    ldapobject['mongolito']['rdn'] = extractRDN(dn).lower()
 
 
 def regex_from_javascript(pattern, insensitive=True):
