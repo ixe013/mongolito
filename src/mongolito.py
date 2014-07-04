@@ -132,7 +132,7 @@ def process(istream, ostream, showprogress=True):
                         logging.info(msg)
 
             num_objects += 1
-            progress(num_objects)
+            progress(num_objects) #TODO : flickers if errors.SkipObjectException is raised
 
     except ValueError as ve:
         #ostream parameter incorrect. Should be in the form rules, output, undo.
