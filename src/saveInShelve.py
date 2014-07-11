@@ -30,7 +30,7 @@ class ShelveWriter(basedestination.BaseDestination):
         return self
  
     def write(self, original, ldapobject):
-        '''Saves the ldapobject in a Mongo database
+        '''Saves the ldapobject in a Python Shelve database
         '''
         try:
             dn = ldapobject['dn'][0]
@@ -38,8 +38,6 @@ class ShelveWriter(basedestination.BaseDestination):
             if isinstance(dn, unicode):
                 dn = dn.encode('utf-8')
 
-            utils.add_metadata(ldapobject, dn)
-            
             self.shelf[dn] = dict(zip(ldapobject.keys(), ldapobject.values()))
 
         except KeyError:
@@ -53,7 +51,7 @@ def create_from_uri(uri):
     
     root, ext = os.path.splitext(uri)
 
-    if uri == 'stdin' or ext.lower() == '.shelve':
+    if ext.lower() == '.shelve' or ext.lower() == '.shelf':
         result = ShelveWriter(uri)
 
     return result

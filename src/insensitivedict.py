@@ -1,5 +1,7 @@
+import collections
+
 #From http://twistedmatrix.com/trac/browser/tags/releases/twisted-13.0.0/twisted/python/util.py#L28
-class InsensitiveDict(dict):
+class InsensitiveDict(collections.OrderedDict):
     """Dictionary, that has case-insensitive keys.
 
     Normally keys are retained in their original form when queried with
