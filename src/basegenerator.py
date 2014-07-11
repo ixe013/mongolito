@@ -77,10 +77,24 @@ class BaseGenerator(object):
         if dn:
             result['dn'] = [dn]
 
-        #Make all attributes multi-valued
+        attributes_to_remove = set()
+
+        #iterate through all the values and apply misc. fixes
         for k,v in result.iteritems():
+            #Make all attributes multi-valued
             if not isinstance(v, list):
                 result[k] = [v]
+
+            #Remove empty values from the list of values
+            result[k] = filter(bool, v)
+
+            #Identify empty attributes
+            if not bool(result[k]): 
+                attributes_to_remove.add(k)
+
+        #Remove empty attributes
+        for k in attributes_to_remove:
+            del result[k]
 
         return result
 

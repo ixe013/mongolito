@@ -161,6 +161,9 @@ def add_metadata(ldapobject, dn):
     #mongolito.rdn will be 'user'
     ldapobject['mongolito']['rdn'] = extractRDN(dn).lower()
 
+    #for nesting calls
+    return ldapobject
+
 
 def regex_from_javascript(pattern, insensitive=True):
     '''Converts a javascript style regular expression to a 
@@ -251,10 +254,10 @@ def get_nested_attribute(ldapobject, attribute):
         key, remaining_keys = attribute.split('.',1)
         return get_nested_attribute(ldapobject[key], remaining_keys)
     except ValueError:
-        #We've hit the last pert of the key, return that
+        #We've hit the last part of the key, return that
         #Might raise a KeyError, just a like a dict.
         #The ValueError means that we were not able to unpack
-        #The dictionary we are looking for in the first element
-        #of the previous object. So we select element [0] 
-        return ldapobject[0][attribute]
+        #the attribute (there are no dots left in it, or there were
+        #no dots to begin with)
+        return ldapobject[attribute]
     

@@ -25,29 +25,37 @@ class SkipEntry(BaseTransformation):
             revers (boolean): If true, non-matching entries will be skipped.
         """
         self.attribute = attribute
-        self.pattern = pattern
+        self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
         self.reverse = reverse
  
     def transform(self, original, ldapobject):
         """
         :data a dictionary reprenting one entry
         """
-        value = utils.get_nested_attribute(ldapobject, self.attribute)
+        try:
+            value = utils.get_nested_attribute(ldapobject, self.attribute)
 
-        #regex are cached, let's use that to our advantage
-        pattern = re.compile(utils.pattern_from_javascript(self.pattern), flags=re.IGNORECASE)
+            #regex are cached, let's use that to our advantage
+            #(we keep the original pattern as a string to put it in the logs)
 
-        #If the attribute is multi-valued
-        if isinstance(value, list): 
-            if self.reverse ^ bool(any(pattern.search, value)):
-                logging.debug('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
+            #If the attribute is multi-valued
+            if isinstance(value, list): 
+                if self.reverse ^ bool(any(filter(self.pattern.search, value))):
+                    logging.debug('Skipped {} because one of {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
+                    raise errors.SkipObjectException
+            else: #the attribute is a string (should not happen, all attributes are lists even if there is only one item
+                if self.reverse ^ bool(pattern.search(value)) :
+                    logging.info('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
+                    raise errors.SkipObjectException
+                        
+            logging.debug('{} was not skipped because {} did not match pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
+
+        except KeyError:
+            #A missing attribute is not a match. But if we are in reverse mode, 
+            #then it becomes one.
+            if self.reverse:
                 raise errors.SkipObjectException
-        else: #the attribute is a string
-            if self.reverse ^ bool(pattern.search(value)) :
-                logging.debug('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
-                raise errors.SkipObjectException
-                    
-        logging.debug('{} was not skipped because {} did not match pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern))
+
 
         #Return the object
         return ldapobject

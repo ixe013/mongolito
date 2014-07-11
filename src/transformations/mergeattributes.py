@@ -32,7 +32,7 @@ class MergeAttributes(BaseTransformation):
         self.attribute = attribute
         self.attributes = (first,)+attributes
 
-        if not attributes:
+        if not self.attributes:
             raise TypeError('Need at least one other attribute for a merge')
 
  
@@ -53,12 +53,11 @@ class MergeAttributes(BaseTransformation):
 
                 del ldapobject[attribute]
 
-            except KeyError:
-                logging.debug('Attribute {} was not merged because it is not present in transformed object named {}'.format(attribute, ldapobject['dn']))
-
-            finally:
                 #Don't leave an empty attribute behind
                 if not ldapobject[self.attribute]:
                     del ldapobject[self.attribute]
+
+            except KeyError:
+                logging.debug('Attribute {} was not merged because it is not present in transformed object named {}'.format(attribute, ldapobject['dn']))
 
         return ldapobject
