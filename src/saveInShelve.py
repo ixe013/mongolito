@@ -33,7 +33,7 @@ class ShelveWriter(basedestination.BaseDestination):
         '''Saves the ldapobject in a Python Shelve database
         '''
         try:
-            dn = ldapobject['dn'][0]
+            dn = ldapobject['dn'][0].lower()
 
             if isinstance(dn, unicode):
                 dn = dn.encode('utf-8')

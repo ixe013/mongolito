@@ -40,61 +40,83 @@ class ShelveReader(basegenerator.BaseGenerator):
         self.shelf.close()
         return self
 
+    def ldapobjectMatchesQuery(self, rawobject, regex_query):
+        '''Will return True if the rawobject matches all of the parameters of the query'''
+
+        #Feeling optimistic today...
+        found = True
+
+        #Should we return this object?
+        for key, search_item in regex_query.iteritems():
+            try:
+                #If none of the attribute does not match the query
+                #FIXME : metadata is not multivalued, so it introduces a special case
+                #FIXME : the fix would be to make metadata multivalued. 
+                value_to_test = utils.get_nested_attribute(rawobject, key)
+
+                if isinstance(value_to_test, list):
+                    if not any(filter(search_item.search, value_to_test)):
+                        #We will not return that object
+                        found = False
+                        break
+                else:
+                    if not search_item.search(value_to_test):
+                        #We will not return that object
+                        found = False
+                        break
+                
+            except KeyError:
+                #The attribute can't be found, so
+                #we will not return the object 
+                found = False
+                break
+
+        return found
+
+
+    def prepareRawobjectForYield(self, dn, rawobject, attributes):
+        ldapobject = insensitivedict.InsensitiveDict({})
+        
+        if attributes:
+            ldapobject['dn'] = dn 
+
+            for attribute in attributes:
+                ldapobject[attribute] = rawobject[attribute]
+        else:
+            ldapboject.update(rawobject)
+
+        return ldapobject
+
     def search(self, query = {}, attributes=[]):
 
         #Copy the queyr into a dict where all values
         #are case insensitive regex
-        regex_query = dict(zip(query.iterkeys(), [re.compile(p) for p in filter(utils.pattern_from_javascript, query.itervalues())]))
+        regex_query = dict(zip(query.iterkeys(), [re.compile(p, re.IGNORECASE) for p in filter(utils.pattern_from_javascript, query.itervalues())]))
 
-        for dn, rawobject in self.shelf.iteritems():
-            #Feeling optimistic today...
-            found = True
-            #The object was not save with the metadata, so let's make sure its there
-            utils.add_metadata(self.sanitize_result(rawobject, dn), dn)
+        #Can we save a table scan?
+        #We have an index, but it will work only if there is no regex
+        #Let's try it blindly
+        try:
+            dn = regex_query['dn'].pattern.lower()
 
-            #Should we return this object?
-            for key, search_item in regex_query.iteritems():
-                try:
-                    #If none of the attribute does not match the query
-                    #FIXME : metadata is not multivalued, so it introduces a special case
-                    #FIXME : the fix would be to make metadata multivalued. 
-                    value_to_test = utils.get_nested_attribute(rawobject, key)
+            if dn in self.shelf.keys():
+                rawobject = self.shelf[dn]
+                #Found it! (or else we would be in the KeyError handler)
+                #The object was not save with the metadata, so let's make sure its there
+                utils.add_metadata(self.sanitize_result(rawobject, dn), dn)
+                yield self.prepareRawobjectForYield(rawobject['dn'], rawobject, attributes)
 
-                    if isinstance(value_to_test, list):
-                        if not any(filter(search_item.search, value_to_test)):
-                            #We will not return that object
-                            found = False
-                            break
-                    else:
-                        if not search_item.search(value_to_test):
-                            #We will not return that object
-                            found = False
-                            break
-                    
-                except KeyError:
-                    #The attribute can't be found, so
-                    #we will not return the object 
-                    found = False
-                    break
+        except KeyError:
+            #Our only key is not in the query
+            #no choice but to do a table scan
+            for dn, rawobject in self.shelf.iteritems():
+                #The object was not save with the metadata, so let's make sure its there
+                utils.add_metadata(self.sanitize_result(rawobject, dn), dn)
 
-            if not found:
-                continue #with another object
-
-            #If we get here, the objet matches the query
-            #we will copy the object in a new dict
-            ldapobject = insensitivedict.InsensitiveDict({})
-            
-            if attributes:
-                ldapobject['dn'] = dn 
-
-                for attribute in attributes:
-                    ldapobject[attribute] = rawobject[attribute]
-            else:
-                ldapboject.update(rawobject)
-
-            #Add metadata and apply common object rules
-            yield utils.add_metadata(self.sanitize_result(ldapobject, dn), dn)
-
+                if self.ldapobjectMatchesQuery(rawobject, regex_query):
+                    #If we get here, the objet matches the query
+                    #we will copy the object in a new dict
+                    yield self.prepareRawobjectForYield(dn, rawobject, attributes)
 
 
 def create_from_uri(uri):
