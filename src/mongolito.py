@@ -32,7 +32,10 @@ def initialize():
     return main.get_connections()
 
 def update_progress(total):
-    sys.stderr.write('\r{0} objects'.format(total))
+    if total > 1:
+        sys.stderr.write('\r{0} objects'.format(total))
+    else:
+        sys.stderr.write('\r{0} object'.format(total))
 
 def process(istream, ostream, showprogress=True):
     '''
