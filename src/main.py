@@ -25,6 +25,7 @@ import readLDIF
 TYPE = 'type'
 INPUT = 'input'
 OUTPUT = 'output'
+INTERMEDIATE = 'intermediate'
 UNDO = 'undo'
 URI = 'uri'
 
@@ -86,9 +87,11 @@ def get_connections():
                 #output and undo are considered outputs 
                 if attribute == OUTPUT or attribute == UNDO:
                     config.set(attribute, TYPE, OUTPUT)
+                if attribute == INPUT:
+                    config.set(attribute, TYPE, INPUT)
                 else:
                     #others are input by default
-                    config.set(attribute, TYPE, INPUT)
+                    config.set(attribute, TYPE, INTERMEDIATE)
 
             #The attribute will be the connection name
             #and the value the uri. The type is input

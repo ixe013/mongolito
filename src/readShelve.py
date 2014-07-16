@@ -1,9 +1,14 @@
-import copy  
+import copy
 import logging
+import os
 import re
+import shelve
 
 import basegenerator
 import factory
+import insensitivedict
+import utils
+
 
 
 def convert_query(query):
@@ -24,7 +29,7 @@ def convert_query(query):
 
 class ShelveReader(basegenerator.BaseGenerator):
 
-    def __init__(self, filename)
+    def __init__(self, filename):
         self.filename = filename
 
     def connect(self, username=None, password=None):
@@ -42,23 +47,42 @@ class ShelveReader(basegenerator.BaseGenerator):
         regex_query = dict(zip(query.iterkeys(), [re.compile(p) for p in filter(utils.pattern_from_javascript, query.itervalues())]))
 
         for dn, rawobject in self.shelf.iteritems():
+            #Feeling optimistic today...
+            found = True
+            #The object was not save with the metadata, so let's make sure its there
+            utils.add_metadata(self.sanitize_result(rawobject, dn), dn)
+
             #Should we return this object?
-            for key,search_item in regex_query:
+            for key, search_item in regex_query.iteritems():
                 try:
-                    #If one the attribute does not match the
-                    #query
-                    if not search_item.search(rawobject[key])
-                        #We will not return that object
-                        continue
+                    #If none of the attribute does not match the query
+                    #FIXME : metadata is not multivalued, so it introduces a special case
+                    #FIXME : the fix would be to make metadata multivalued. 
+                    value_to_test = utils.get_nested_attribute(rawobject, key)
+
+                    if isinstance(value_to_test, list):
+                        if not any(filter(search_item.search, value_to_test)):
+                            #We will not return that object
+                            found = False
+                            break
+                    else:
+                        if not search_item.search(value_to_test):
+                            #We will not return that object
+                            found = False
+                            break
                     
                 except KeyError:
                     #The attribute can't be found, so
                     #we will not return the object 
-                    continue
+                    found = False
+                    break
+
+            if not found:
+                continue #with another object
 
             #If we get here, the objet matches the query
             #we will copy the object in a new dict
-            ldapobject = InsensitiveDict()
+            ldapobject = insensitivedict.InsensitiveDict({})
             
             if attributes:
                 ldapobject['dn'] = dn 
@@ -85,5 +109,5 @@ def create_from_uri(uri):
 
     return result
 
-factory.Factory().register(MongoReader, create_from_uri)
+factory.Factory().register(ShelveReader, create_from_uri)
 
