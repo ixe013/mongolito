@@ -13,6 +13,7 @@ import insensitivedict
 import readCSV
 import readLDIF
 import readLDAP
+import readShelve
 import readMongo
 import printldif
 import saveInMongo
@@ -58,11 +59,18 @@ def process(istream, ostream, showprogress=True):
     except ValueError: #Need more than 1 value to unpack
         generator = istream
 
+    #Just to show something if the first object takes a while (they could all be skipped)
+    progress(0) 
+
     try:
         #We don't use enumerate, because we have to tweak the total count
         #each time we skip an object
         num_objects = 0
+
         for ldapobject in generator:
+            #Lets see if we make it to the end of the loop
+            object_processed = False
+
             #FIXME : Generator filtering should be a class
             #Generator does not decide of changetype, rules do
             ldapobject.pop('changetype', None)
@@ -108,9 +116,11 @@ def process(istream, ostream, showprogress=True):
                             for attribute_to_add in current[ChangeType.add]:
                                 if attribute_to_add in current:
                                     output.add(original, current)
+                                    object_processed = bool(rules) #Count the object as processed only if there are rules attached to it
                         else:
                             #FIXME : Legacy, remove when others are done
                             output.write(original, current)
+                            object_processed = bool(rules) #Count the object as processed only if there are rules attached to it
 
                     if undo:
                         logging.debug('About to emit undo operation for {}'.format(current['dn']))
@@ -122,17 +132,15 @@ def process(istream, ostream, showprogress=True):
 
                     logging.debug('Processing {} finished'.format(original['dn']))
 
-
                 except errors.SkipObjectException:
-                    #That object will not count in the total
-                    num_objects -= 1
                     if output:
                         msg = 'Skipped {}'.format(current['dn'])
                         output.comment(msg)
                         logging.info(msg)
 
-            num_objects += 1
-            progress(num_objects) #TODO : flickers if errors.SkipObjectException is raised
+            if object_processed:
+                num_objects += 1
+                progress(num_objects) 
 
     except ValueError as ve:
         #ostream parameter incorrect. Should be in the form rules, output, undo.
