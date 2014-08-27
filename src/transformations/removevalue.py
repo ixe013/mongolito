@@ -27,20 +27,17 @@ class RemoveValue(BaseTransformation):
         '''
         :data a dictionary reprenting one entry
         '''
-        #For each dictionary object to process
-        #For each key value pair in the orginal dict
         try:
-            for value in ldapobject[self.attribute]:
-                if self.pattern.search(value):
-                    #This value matches the pattern, remove it
-                    ldapobject[self.attribute].remove(value)
+            #The set of attributes, minus the set of attributes that don't match the pattern
+            #converted to a list is the new value for the attribute
+            ldapobject[self.attribute] = list(set(ldapobject[self.attribute])-set(filter(self.pattern.search, ldapobject[self.attribute])))
                     
             if not ldapobject[self.attribute]:
                 del ldapobject[self.attribute]
 
         except KeyError:
-            #The attribute name is not a regex, so there can only be
-            #one match, or none.
+            #The attribute name is not present in the dict
+            #so there is nothing to do
             pass
 
         #Return the object, possibly modified                
