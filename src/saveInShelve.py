@@ -22,7 +22,9 @@ class ShelveWriter(basedestination.BaseDestination):
         self.filename = filename
 
     def connect(self):
-        self.shelf = shelve.open(self.filename)
+        '''Always creates a new database'''
+        #We don't wan't to read in stale values from a previous run
+        self.shelf = shelve.open(self.filename, 'n')
         return self
  
     def disconnect(self):

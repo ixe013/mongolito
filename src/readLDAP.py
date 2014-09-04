@@ -267,7 +267,8 @@ class LDAPReader(basegenerator.BaseGenerator):
 
         for dn,entry in result_generator:
             # process dn and entry
-            yield utils.add_metadata(self.sanitize_result(entry, dn), dn)
+            wtf = utils.add_metadata(self.sanitize_result(entry, dn), dn)
+            yield wtf
        
 
 def create_from_uri(uri):

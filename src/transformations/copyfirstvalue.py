@@ -12,7 +12,7 @@ class CopyFirstValueOfAttribute(BaseTransformation):
         values on both source and destination
         """
         try:
-            ldapobject[self.toattr].extend(ldapobject[self.fromattr][0])
+            ldapobject.setdefault(self.toattr, []).extend(ldapobject[self.fromattr])
         except KeyError:
             #fromattr is absent
             pass

@@ -100,11 +100,11 @@ class ValuesFromQuery(BaseTransformation):
 
                 #Build an array of values. Most of the time, only
                 #one result will be returned
-                logging.debug('Getting attribute {} from subquery'.format(self.selected))
-                new_results = self.source.get_attribute(query, self.selected)
-                #The statement above returns a generator expression. The query hasn't been executed yet!
-                #We force it to execute
-                new_results = [ r for r in new_results]
+                logging.debug('Getting attribute {} from subquery {}'.format(self.selected, query))
+
+                #The call to get_attribute below returns a generator expression. The query hasn't 
+                #been executed yet! We force it to execute.
+                new_results = [ r for r in self.source.get_attribute(query, self.selected)]
                 
                 if new_results:
                     logging.debug('Merging result(s) to object')
@@ -119,10 +119,12 @@ class ValuesFromQuery(BaseTransformation):
 
         else:
             #Return the original value untouched
+            logging.debug('Attribute {} did not match pattern {}, keeping its value'.format(attribute, self.pattern.pattern))
             results = [attribute]
 
         #Filter out None (those mean that we have a cache 
         #hit, but the subquery did not find anything)
+        #I think return filter(bool, results) is more Pythonic...
         return [x for x in results if x is not None]
 
         
@@ -136,20 +138,34 @@ class ValuesFromQuery(BaseTransformation):
             #For each value of the attribute we want to replace
             for value in ldapobject[self.attribute]:
                 logging.debug('About to query {}'.format(value))
-                results.extend(self.execute_query(value))
+                try:
+                    results_so_far = self.execute_query(value)
+                    if results_so_far:
+                        results.extend(results_so_far)
+                    else:
+                        #No need to do anything, as we will be copying
+                        #the results list which will not include this
+                        #value we couldn't find in the subquery
+                        pass
+
+                except Exception as e:
+                    raise e
 
             if results:
-                logging.debug('Query returned {}'.format(value))
+                logging.debug('The attribute {} old content {} will be replaced by {}'.format(self.attribute, ldapobject[self.attribute], results))
                 ldapobject[self.attribute] = results
             else:
                 #We delete the attribute if it is empty
-                logging.debug('Query did return any results')
+                logging.debug('Query did return any results. We are removing attribute {}'.format(self.attribute))
                 del ldapobject[self.attribute]
 
             
         except KeyError:
             #The attribute we want to replace is absent from ldapobject
+            logging.debug("Attribute {} is absent from object {}".format(self.attribute, ldapobject.get('dn', '(???)')))
             pass
+
+            
 
         #Return the object, possibly modified                
         return ldapobject

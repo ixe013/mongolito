@@ -1,3 +1,4 @@
+import inspect 
 import logging
 import re
 
@@ -24,6 +25,9 @@ class SkipEntry(BaseTransformation):
                 in the attribute value(s). Search is always case-insensitive. 
             revers (boolean): If true, non-matching entries will be skipped.
         """
+        (frame, self.rule_filename, self.rule_line_number,
+             function_name, lines, index) = inspect.getouterframes(inspect.currentframe())[1]
+
         self.attribute = attribute
         self.pattern = re.compile(utils.pattern_from_javascript(pattern), flags=re.IGNORECASE)
         self.reverse = reverse
@@ -41,14 +45,18 @@ class SkipEntry(BaseTransformation):
             #If the attribute is multi-valued
             if isinstance(value, list): 
                 if self.reverse ^ bool(any(filter(self.pattern.search, value))):
-                    logging.debug('Skipped {} because one of {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
+                    logging.info('Skipped {} because one of {}={} matched pattern {} (rule at {}:{})'.format(ldapobject['dn'], self.attribute, ldapobject.get(self.attribute), self.pattern.pattern, self.rule_filename, self.rule_line_number))
                     raise errors.SkipObjectException
-            else: #the attribute is a string (should not happen, all attributes are lists even if there is only one item
+            else: #the attribute is a string (should not happen, all attributes are lists even if there is only one item)
                 if self.reverse ^ bool(pattern.search(value)) :
                     logging.info('Skipped {} because {} matched pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
                     raise errors.SkipObjectException
                         
-            logging.debug('{} was not skipped because {} did not match pattern {}'.format(ldapobject['dn'], self.attribute, self.pattern.pattern))
+            #We don't have a match so we should keep it, unless it is opposite day. Either way, the attribute stays
+            if self.reverse:
+                logging.debug('{} was not skipped because {}={} matched pattern {} (rule at {}:{})'.format(ldapobject['dn'], self.attribute, ldapobject.get(self.attribute), self.pattern.pattern, self.rule_filename, self.rule_line_number))
+            else:
+                logging.debug('{} was not skipped because {}={} did not match pattern {} (rule at {}:{})'.format(ldapobject['dn'], self.attribute, ldapobject.get(self.attribute), self.pattern.pattern, self.rule_filename, self.rule_line_number))
 
         except KeyError:
             #A missing attribute is not a match. But if we are in reverse mode, 

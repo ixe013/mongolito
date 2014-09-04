@@ -1,7 +1,8 @@
 import getpass
 import sys
 
-import errors
+import errors                        
+import insensitivedict
 
 class BaseGenerator(object):
     '''
@@ -12,12 +13,18 @@ class BaseGenerator(object):
         '''
         Returns an iterator over a single attribute from a search.
         '''
-        for ldapobject in self.search(query, [attribute]):
+        attributes_requested = None
+
+        if attribute:
+            attributes_requested = [attribute]
+
+        for ldapobject in self.search(query, attributes_requested):
             try:
                 for single in ldapobject[attribute]:
                     yield single
 
             except KeyError as ke:
+                #We support eating the KeyError
                 if error is not None:
                     raise ke
 

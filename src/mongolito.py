@@ -78,15 +78,21 @@ def process(istream, ostream, showprogress=True):
             #Generator does not decide of changetype, rules do
             ldapobject.pop('changetype', None)
 
+            #The original ldapobject that will be sent to the methods must not be 
+            #modified. It is an interface contract, because technically speaking
+            #nothing will break if you do modify the original object. That is, the
+            #code does not make that assumption but modifiy the original ldapobject
+            #was never tested and could have nasty side effects.
+            #Using ldapobject.deepcopy() here would enforce the interface contract, 
+            #but would slow down and consume more memory than needed. So I just 
+            #alias the variable for now. If needed, I can always add a .deepcopy()
+            #later
+            original = insensitivedict.InsensitiveDict(ldapobject)
+
+            logging.debug('Processing {}'.format(original['dn']))
+
             for rules, output, undo in ostream:
-                #The original ldapobject that will be sent to the methods must not be 
-                #modified. It is an interface contract, because technically speaking
-                #nothing will break if you do modify the original object. Using 
-                #ldapobject.deepcopy() here would enforce the interface contract, but
-                #but would slow down and consume more memory than needed. So I just 
-                #alias the variable for now. If needed, I can always add a .deepcopy()
-                #later
-                original = insensitivedict.InsensitiveDict(ldapobject)
+                logging.debug('Begining rule loop')
 
                 #The object that we are working on must be deeply copied because
                 #anything can happen to it. This can be rather big in terms of 
@@ -96,7 +102,6 @@ def process(istream, ostream, showprogress=True):
                 current = insensitivedict.InsensitiveDict(copy.deepcopy(ldapobject))    
 
                 try:
-                    logging.debug('Processing {}'.format(original['dn']))
                     for rule in rules:
                         rule.transform(original, current)    
 
@@ -133,13 +138,14 @@ def process(istream, ostream, showprogress=True):
                         #but this single line works in most scenarios
                         undo.write(original, current)
 
-                    logging.debug('Processing {} finished'.format(original['dn']))
 
                 except errors.SkipObjectException:
                     if output:
                         msg = 'Skipped {}'.format(current['dn'])
                         output.comment(msg)
                         logging.info(msg)
+
+            logging.debug('Processing {} finished'.format(original['dn']))
 
             if object_processed:
                 num_objects += 1
