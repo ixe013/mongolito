@@ -18,7 +18,7 @@ class ValuesFromQuery(BaseTransformation):
     '''Renames a value with the result of a sub query
 
     '''
-    def __init__(self, attribute, pattern, query, source, cache=False, selected='dn'):
+    def __init__(self, attribute, pattern, query, source, cache=False, selected='dn', deleteIfEmpty=True, keepMissedSearches=False):
         '''
         '''
         self.attribute = attribute
@@ -26,6 +26,8 @@ class ValuesFromQuery(BaseTransformation):
         self.query = query
         self.source = source
         self.selected = selected
+        self.deleteIfEmpty = deleteIfEmpty 
+        self.keepMissedSearches = keepMissedSearches
 
         self.cache_enabled = False  #Cache default is OFF
         self.cache = {}
@@ -146,7 +148,9 @@ class ValuesFromQuery(BaseTransformation):
                         #No need to do anything, as we will be copying
                         #the results list which will not include this
                         #value we couldn't find in the subquery
-                        pass
+                        #unless we want to keep them
+                        if self.keepMissedSearches:
+                            results.extend([value])
 
                 except Exception as e:
                     raise e
@@ -154,18 +158,19 @@ class ValuesFromQuery(BaseTransformation):
             if results:
                 logging.debug('The attribute {} old content {} will be replaced by {}'.format(self.attribute, ldapobject[self.attribute], results))
                 ldapobject[self.attribute] = results
-            else:
+            elif self.deleteIfEmpty:
                 #We delete the attribute if it is empty
                 logging.debug('Query did return any results. We are removing attribute {}'.format(self.attribute))
                 del ldapobject[self.attribute]
+            else:
+                #We delete the attribute if it is empty
+                logging.debug('Query did return any results, but we are keeping empty attribute'.format(self.attribute))
 
             
         except KeyError:
             #The attribute we want to replace is absent from ldapobject
             logging.debug("Attribute {} is absent from object {}".format(self.attribute, ldapobject.get('dn', '(???)')))
             pass
-
-            
 
         #Return the object, possibly modified                
         return ldapobject
