@@ -11,7 +11,8 @@ class ChangeType(BaseTransformation):
 
     """
     add='add'
-    changetypes = [add]
+    modify='modify'
+    changetypes = [add, modify]
     
     def __init__(self, change, attribute):
         """

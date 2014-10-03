@@ -76,6 +76,8 @@ def process(istream, ostream, showprogress=True):
 
             #FIXME : Generator filtering should be a class
             #Generator does not decide of changetype, rules do
+            #removing the changetype disables the half-baked changetype
+            #handling code below
             ldapobject.pop('changetype', None)
 
             #The original ldapobject that will be sent to the methods must not be 
@@ -125,6 +127,16 @@ def process(istream, ostream, showprogress=True):
                                 if attribute_to_add in current:
                                     output.add(original, current)
                                     object_processed = bool(rules) #Count the object as processed only if there are rules attached to it
+                        elif changetype==ChangeType.modify:
+                            if ChangeType.modify in current.keys():
+                                #FIXME There could be nothing to do in the end, should skip the object
+                                for attribute_to_modify in current[ChangeType.modify]:
+                                    if attribute_to_modify in current:
+                                        output.modify(original, current)
+                                        object_processed = bool(rules) #Count the object as processed only if there are rules attached to it
+                            else:
+                                logging.error('Modification type not yet supported')
+                                raise NotImplementedError
                         else:
                             #FIXME : Legacy, remove when others are done
                             output.write(original, current)

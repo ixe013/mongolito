@@ -6,7 +6,6 @@ import shelve
 
 import basegenerator
 import factory
-from insensitivedict import InsensitiveDict as iDict
 import utils
 
 
@@ -104,7 +103,7 @@ class ShelveReader(basegenerator.BaseGenerator):
                 #Found it! (or else we would be in the KeyError handler)
                 #The object was not save with the metadata, so let's make sure its there
                 utils.add_metadata(self.sanitize_result(rawobject, dn), dn)
-                yield iDict(rawobject)
+                yield rawobject
 
         except KeyError:
             #Our only key is not in the query
@@ -116,7 +115,7 @@ class ShelveReader(basegenerator.BaseGenerator):
                 if self.ldapobjectMatchesQuery(rawobject, regex_query):
                     #If we get here, the objet matches the query
                     #we will copy the object in a new dict
-                    yield iDict(rawobject)
+                    yield rawobject
 
 
 def create_from_uri(uri):
