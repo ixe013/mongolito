@@ -9,15 +9,9 @@ class MakeValuesUnique(BaseTransformation):
         If the attribute is present, makes all values it 
         contains unique. Does not preserve order.
         """
-        seen = set()
-
         try:
-            for item in ldapobject[self.attribute]:
-                if item not in seen: 
-                    seen.add(item)
-
-            #save the new list
-            ldapobject[self.attribute] = list(seen)
+            #save the new list without duplicates
+            ldapobject[self.attribute] = list(set(ldapobject[self.attribute]))
 
         except KeyError:
             #The attribute does not exist
